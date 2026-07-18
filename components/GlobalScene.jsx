@@ -140,6 +140,10 @@ function CrystallineCore({ glass, pal }) {
 function AgentConstellation({ count, pal }) {
   const inst = useRef();
   const dummy = useMemo(() => new THREE.Object3D(), []);
+  // inference pulse: every 8–12s a thought originates at a random node and
+  // cascades outward as an expanding glow band through the constellation
+  const pulse = useRef({ origin: 0, t: 10, next: 9 });
+  const pointer3 = useMemo(() => new THREE.Vector3(), []);
   const dirs = useMemo(() => {
     const arr = [];
     const phi = Math.PI * (3 - Math.sqrt(5));
@@ -168,11 +172,36 @@ function AgentConstellation({ count, pal }) {
 
     const t = state.clock.elapsedTime;
     const radius = 0.4 + THREE.MathUtils.smoothstep(p, 0.45, 1.1) * 2.6;
+
+    // advance the inference pulse clock
+    const pu = pulse.current;
+    pu.t += 1 / 60;
+    if (pu.t > pu.next) {
+      pu.t = 0;
+      pu.next = 8 + Math.random() * 4;
+      pu.origin = (Math.random() * dirs.length) | 0;
+    }
+    const waveR = pu.t * 3.2; // expanding band, in direction-space
+    const originDir = dirs[pu.origin].dir;
+
+    // cursor as a gravity well in constellation space
+    pointer3.set((state.pointer.x || 0) * 3.4, (state.pointer.y || 0) * 2.2, 1.2);
+
     dirs.forEach((d, i) => {
       const wob = Math.sin(t * d.spin + d.wob) * 0.18;
       dummy.position.copy(d.dir).multiplyScalar(radius + wob);
+
+      // gravity: bend gently toward the cursor, falling off with distance
+      const toCursor = pointer3.clone().sub(dummy.position);
+      const dist = toCursor.length();
+      dummy.position.addScaledVector(toCursor.normalize(), Math.min(0.5, 1.6 / (dist * dist + 2)) * presence);
+
+      // pulse: nodes glow-scale as the thought band passes their angular distance
+      const band = Math.abs(d.dir.distanceTo(originDir) - waveR);
+      const glow = Math.exp(-band * band * 14) * (pu.t < 2.4 ? 1 : 0);
+
       dummy.rotation.set(t * d.spin, d.wob + t * 0.4, 0);
-      dummy.scale.setScalar(0.07 * d.size * (0.6 + presence * 0.4));
+      dummy.scale.setScalar(0.07 * d.size * (0.6 + presence * 0.4) * (1 + glow * 1.6));
       dummy.updateMatrix();
       m.setMatrixAt(i, dummy.matrix);
     });

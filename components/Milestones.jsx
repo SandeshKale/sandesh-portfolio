@@ -2,7 +2,7 @@
 import { useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
-import { Section, Reveal } from './primitives';
+import { Section, Reveal, Eyebrow } from './primitives';
 import { logEvent } from '@/lib/telemetry';
 
 const MiniWire = dynamic(() => import('./MiniWire'), { ssr: false });
@@ -104,7 +104,7 @@ export default function Milestones() {
   return (
     <Section id="milestones" chapter="milestones">
       <Reveal>
-        <div className="eyebrow">sys/milestones</div>
+        <Eyebrow>sys/milestones</Eyebrow>
       </Reveal>
       <Reveal delay={0.1}>
         <h2 className="h2">

@@ -130,3 +130,31 @@ section:not(#hero)::before {
     scroll-behavior: auto;
   }
 }
+
+/* chaos mode: the machine shudders */
+@keyframes sbshake {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(0.9px, -0.7px); }
+  50% { transform: translate(-0.8px, 0.6px); }
+  75% { transform: translate(0.6px, 0.9px); }
+}
+.sb-shake { animation: sbshake 0.32s infinite; }
+
+/* holographic scanline sweep on glass modules */
+.holo { position: relative; overflow: hidden; }
+.holo::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; top: -30%;
+  height: 26%;
+  background: linear-gradient(180deg, transparent, rgb(var(--c-amber) / 0.045), transparent);
+  animation: holosweep 7s linear infinite;
+  pointer-events: none;
+}
+@keyframes holosweep {
+  0% { top: -30%; }
+  60%, 100% { top: 130%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sb-shake, .holo::before { animation: none; }
+}

@@ -1,5 +1,5 @@
 'use client';
-import { Section, Reveal, TiltCard } from './primitives';
+import { Section, Reveal, TiltCard, Eyebrow } from './primitives';
 import { logEvent } from '@/lib/telemetry';
 
 /* ============ sys/composition — architectural methodology ============ */
@@ -31,7 +31,7 @@ export function Composition() {
   return (
     <Section id="composition" chapter="composition">
       <Reveal>
-        <div className="eyebrow">sys/composition</div>
+        <Eyebrow>sys/composition</Eyebrow>
       </Reveal>
       <Reveal delay={0.1}>
         <h2 className="h2">

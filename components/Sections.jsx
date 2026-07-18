@@ -1,7 +1,7 @@
 'use client';
 import { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { Section, Reveal, TiltCard } from './primitives';
+import { Section, Reveal, TiltCard, Eyebrow } from './primitives';
 
 /* ------------------------------ STACK ------------------------------ */
 const STACK = [
@@ -44,7 +44,7 @@ export function Stack() {
   return (
     <Section id="stack" chapter="stack">
       <Reveal>
-        <div className="eyebrow">sys/stack</div>
+        <Eyebrow>sys/stack</Eyebrow>
       </Reveal>
       <Reveal delay={0.1}>
         <h2 className="h2">
@@ -110,7 +110,7 @@ export function AISection() {
   return (
     <Section id="ai" chapter="ai">
       <Reveal>
-        <div className="eyebrow">sys/ai</div>
+        <Eyebrow>sys/ai</Eyebrow>
       </Reveal>
       <Reveal delay={0.1}>
         <h2 className="h2">
@@ -177,7 +177,7 @@ export function Leadership() {
   return (
     <Section id="leadership" chapter="leadership">
       <Reveal>
-        <div className="eyebrow">sys/leadership</div>
+        <Eyebrow>sys/leadership</Eyebrow>
       </Reveal>
       <Reveal delay={0.1}>
         <p className="font-disp font-medium leading-[1.32] tracking-[-0.01em] max-w-[840px] text-[clamp(24px,3.2vw,36px)]">
@@ -212,7 +212,7 @@ export function Now() {
   return (
     <Section id="now" chapter="now">
       <Reveal>
-        <div className="eyebrow">sys/now</div>
+        <Eyebrow>sys/now</Eyebrow>
       </Reveal>
       <Reveal delay={0.1}>
         <h2 className="h2">
@@ -256,7 +256,7 @@ export function Contact() {
     <Section id="contact" chapter="contact" className="pb-10">
       <div ref={ref}>
         <Reveal>
-          <div className="eyebrow">sys/contact</div>
+          <Eyebrow>sys/contact</Eyebrow>
         </Reveal>
         <motion.h2
           style={{ y, opacity }}
@@ -311,7 +311,7 @@ export function Footer() {
     <footer className="border-t hairline mt-16">
       <div className="max-w-wrap mx-auto px-8 py-7 pb-10 flex flex-wrap justify-between gap-5 font-mono text-[10.5px] tracking-[0.06em] text-dim">
         <div>© 2026 SANDESH KALE</div>
-        <div>DARK-MODE FIRST · INSTRUMENTED BY DESIGN</div>
+        <a href="/blueprint" className="hover:text-amber transition-colors">SYS/BLUEPRINT — HOW THIS SITE WORKS</a>
       </div>
     </footer>
   );

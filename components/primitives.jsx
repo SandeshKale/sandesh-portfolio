@@ -9,6 +9,7 @@ import {
   useReducedMotion,
 } from 'framer-motion';
 import { logEvent } from '@/lib/telemetry';
+import Decode from './Decode';
 
 /* Section: wraps a chapter, reports itself to telemetry on entry,
    and gives children a shared reveal context. */
@@ -88,6 +89,15 @@ export function TiltCard({ children, className = '', max = 10, glare = true }) {
           />
         )}
       </motion.div>
+    </div>
+  );
+}
+
+/* Eyebrow: the sys/* section label, resolving out of glyph noise */
+export function Eyebrow({ children }) {
+  return (
+    <div className="eyebrow">
+      <Decode>{children}</Decode>
     </div>
   );
 }

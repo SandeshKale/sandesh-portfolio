@@ -1,7 +1,7 @@
 'use client';
 import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Section, Reveal } from './primitives';
+import { Section, Reveal, Eyebrow } from './primitives';
 import { logEvent } from '@/lib/telemetry';
 
 /* ============================================================
@@ -77,12 +77,15 @@ function RagSandbox() {
   const [focus, setFocus] = useState(null); // hovered node key for the explainer bar
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
+  const [chaos, setChaos] = useState(false);
 
   const est = useMemo(() => estimate({ mode, bias, depth }), [mode, bias, depth]);
   const { nodes, hops, agents } = useMemo(() => buildLayout({ mode, depth }), [mode, depth]);
   const cachePct = Math.round((0.2 + bias * 0.6) * 100);
-  const graphKey = `${mode}-${depth}-${Math.round(bias * 4)}`;
+  const graphKey = `${mode}-${depth}-${Math.round(bias * 4)}-${chaos ? 'x' : 'o'}`;
 
+  const chaosSummary =
+    'SYSTEM STRESS ACTIVE — the agent tier is failing. Watch the response: red packets die at the guardrail (contained, never shipped), while the router falls back to cached-answers-only mode along the green path. Degraded, honest, up.';
   const summary =
     `${bias > 0.66 ? 'Latency-first' : bias < 0.33 ? 'Accuracy-first' : 'Balanced'}: ` +
     `~${cachePct}% of queries are answered straight from the semantic cache. ` +
@@ -162,7 +165,7 @@ function RagSandbox() {
   const lastHop = hops[hops.length - 1];
 
   return (
-    <div className="rounded-[14px] border hairline bg-ink/70 backdrop-blur-md overflow-hidden">
+    <div className="holo rounded-[14px] border hairline bg-ink/70 backdrop-blur-md overflow-hidden">
       <div className="flex items-center gap-2 px-5 py-3 border-b hairline font-mono text-[10.5px] tracking-[0.08em] text-mute uppercase">
         <span className="w-1.5 h-1.5 rounded-full bg-amber animate-pulse" />
         dynamic graph rag sandbox
@@ -212,18 +215,33 @@ function RagSandbox() {
             </div>
           </div>
           <div className="pt-3 border-t border-dashed hairline font-mono text-[11px] space-y-1.5">
-            <div className="flex justify-between text-mute"><span>p50 latency</span><span className="text-amber">{est.latency} ms</span></div>
-            <div className="flex justify-between text-mute"><span>answer quality</span><span className="text-amber">{est.accuracy}%</span></div>
-            <div className="flex justify-between text-mute"><span>tokens / query</span><span className="text-amber">{est.tokens.toLocaleString()}</span></div>
+            <div className="flex justify-between text-mute"><span>p50 latency</span><span className={chaos ? 'text-[#d97a5a]' : 'text-amber'}>{chaos ? est.latency + 180 : est.latency} ms</span></div>
+            <div className="flex justify-between text-mute"><span>answer quality</span><span className={chaos ? 'text-[#d97a5a]' : 'text-amber'}>{chaos ? 'cached-only' : est.accuracy + '%'}</span></div>
+            <div className="flex justify-between text-mute"><span>tokens / query</span><span className="text-amber">{chaos ? Math.round(est.tokens * 0.3).toLocaleString() : est.tokens.toLocaleString()}</span></div>
+            {chaos && <div className="flex justify-between text-mute"><span>errors shipped</span><span className="text-ok">0 · guardrail held</span></div>}
             <div className="text-[9.5px] text-dim pt-1">illustrative model — relative, not vendor quotes</div>
           </div>
+
+          {/* the big red switch */}
+          <button
+            data-hot
+            onClick={() => { setChaos((c) => !c); setNote(''); logEvent('sandbox.chaos', chaos ? 'recovered' : 'stress-injected'); }}
+            aria-pressed={chaos}
+            className={`w-full font-mono text-[11px] tracking-[0.1em] uppercase px-3 py-2.5 rounded-lg border transition-all ${
+              chaos
+                ? 'border-[#c96a6a] text-[#d97a5a] bg-[#c96a6a]/10 animate-pulse'
+                : 'border-[#c96a6a]/50 text-[#c98a8a] hover:bg-[#c96a6a]/10'
+            }`}
+          >
+            {chaos ? '■ restore agent tier' : '⚠ introduce system stress'}
+          </button>
         </div>
 
         {/* live diagram */}
         <div className="p-5">
           <svg viewBox="0 0 760 288" className="w-full h-auto" role="img"
             aria-label="Live RAG pipeline: query, router, semantic cache, graph retrieval hops, agents, guardrail, response">
-            <motion.g key={graphKey} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
+            <motion.g key={graphKey} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className={chaos ? "sb-shake" : ""}>
               {/* edges — all computed from node geometry */}
               <path id="e-qr" d={edge(nodes.query, nodes.router)} fill="none" stroke="var(--line-strong)" strokeWidth="1.2" />
               <path id="e-rc" d={edge(nodes.router, nodes.cache)} fill="none" stroke="rgb(var(--c-amber) / .75)" strokeWidth={1 + (cachePct / 100) * 3.2} />
@@ -239,6 +257,13 @@ function RagSandbox() {
                 <path key={`ag-${a.id}`} id={`e-ag-${i}`} d={edge(a, nodes.guard)} fill="none" stroke="var(--line-strong)" strokeWidth="1.1" />
               ))}
               <path id="e-gr" d={edge(nodes.guard, nodes.resp)} fill="none" stroke="rgb(var(--c-ok) / .6)" strokeWidth="1.4" />
+              {chaos && (
+                <path
+                  id="e-fallback"
+                  d={`M${nodes.router.x + nodes.router.w / 2},${nodes.router.y + H} C${nodes.router.x + 60},268 ${nodes.guard.x - 60},268 ${nodes.guard.x + nodes.guard.w / 2},${nodes.guard.y + H}`}
+                  fill="none" stroke="rgb(var(--c-ok) / .8)" strokeWidth="1.6" strokeDasharray="5 4"
+                />
+              )}
 
               {/* packets — restart cleanly on config change via graphKey */}
               {[0, 1].map((i) => (
@@ -253,10 +278,26 @@ function RagSandbox() {
                 <animateMotion dur="1.9s" repeatCount="indefinite"><mpath href="#e-rh" /></animateMotion>
               </circle>
               {agents.map((a, i) => (
-                <circle key={`p-ag${i}`} r="2.6" fill="rgb(var(--c-steel))" opacity="0.85">
+                <circle key={`p-ag${i}`} r={chaos ? 3.2 : 2.6} fill={chaos ? '#c96a6a' : 'rgb(var(--c-steel))'} opacity="0.9">
                   <animateMotion dur={`${1.7 + i * 0.4}s`} begin={`${i * 0.6}s`} repeatCount="indefinite"><mpath href={`#e-ag-${i}`} /></animateMotion>
+                  {chaos && <animate attributeName="opacity" values="0.9;0.9;0" keyTimes="0;0.85;1" dur={`${1.7 + i * 0.4}s`} repeatCount="indefinite" />}
                 </circle>
               ))}
+              {chaos && (
+                <>
+                  {/* guardrail flare */}
+                  <circle cx={nodes.guard.x + nodes.guard.w / 2} cy={nodes.guard.y + H / 2} r="26" fill="none" stroke="#c96a6a" strokeWidth="1">
+                    <animate attributeName="r" values="18;30;18" dur="1.1s" repeatCount="indefinite" />
+                    <animate attributeName="stroke-opacity" values="0.7;0;0.7" dur="1.1s" repeatCount="indefinite" />
+                  </circle>
+                  {/* fallback traffic */}
+                  {[0, 1].map((i) => (
+                    <circle key={`fb${i}`} r="3" fill="rgb(var(--c-ok))" opacity="0.9">
+                      <animateMotion dur={`${1.6 + i * 0.5}s`} begin={`${i * 0.7}s`} repeatCount="indefinite"><mpath href="#e-fallback" /></animateMotion>
+                    </circle>
+                  ))}
+                </>
+              )}
               <circle r="3" fill="rgb(var(--c-ok))" opacity="0.9">
                 <animateMotion dur="1.4s" repeatCount="indefinite"><mpath href="#e-gr" /></animateMotion>
               </circle>
@@ -282,7 +323,7 @@ function RagSandbox() {
                   : focus.startsWith('exec') ? 'exec'
                   : focus
                 ] || NODE_DESC[(nodes[focus] || {}).kind] || ''
-              : <span className="text-dim">hover any node to see what it does · {summary}</span>}
+              : <span className={chaos ? 'text-[#d97a5a]' : 'text-dim'}>{chaos ? chaosSummary : <>hover any node to see what it does · {summary}</>}</span>}
           </div>
 
           <div className="mt-3 flex items-start gap-3 flex-wrap">
@@ -328,7 +369,7 @@ function CostEstimator() {
   const maxBar = Math.max(vanillaMonthly, 1);
 
   return (
-    <div className="rounded-[14px] border hairline bg-ink/70 backdrop-blur-md overflow-hidden">
+    <div className="holo rounded-[14px] border hairline bg-ink/70 backdrop-blur-md overflow-hidden">
       <div className="flex items-center gap-2 px-5 py-3 border-b hairline font-mono text-[10.5px] tracking-[0.08em] text-mute uppercase">
         <span className="w-1.5 h-1.5 rounded-full bg-ok animate-pulse" />
         token &amp; latency cost estimator
@@ -401,7 +442,7 @@ export default function Sandbox() {
   return (
     <Section id="sandbox" chapter="sandbox">
       <Reveal>
-        <div className="eyebrow">sys/sandbox</div>
+        <Eyebrow>sys/sandbox</Eyebrow>
       </Reveal>
       <Reveal delay={0.1}>
         <h2 className="h2">

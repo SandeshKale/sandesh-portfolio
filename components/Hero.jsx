@@ -1,6 +1,51 @@
 'use client';
-import { useRef } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
+import { motion, useScroll, useTransform, useReducedMotion } from 'framer-motion';
+
+/* Name assembles character-by-character from z-depth; subtitle types itself. */
+function AssembledName({ text, accentFrom }) {
+  const chars = [...text];
+  return (
+    <span className="inline-block" style={{ perspective: 900 }}>
+      {chars.map((c, i) => (
+        <motion.span
+          key={i}
+          initial={{ opacity: 0, z: -420, rotateX: -50, y: 28 }}
+          animate={{ opacity: 1, z: 0, rotateX: 0, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.25 + i * 0.045, ease: [0.16, 1, 0.3, 1] }}
+          className={`inline-block will-change-transform ${i >= accentFrom ? 'text-amber' : ''}`}
+          style={{ transformStyle: 'preserve-3d' }}
+        >
+          {c === ' ' ? '\u00A0' : c}
+        </motion.span>
+      ))}
+    </span>
+  );
+}
+
+function TypedLine({ text, startDelay = 1100 }) {
+  const reduced = useReducedMotion();
+  const [n, setN] = useState(reduced ? text.length : 0);
+  useEffect(() => {
+    if (reduced) return;
+    let id;
+    const t = setTimeout(() => {
+      id = setInterval(() => {
+        setN((v) => {
+          if (v >= text.length) { clearInterval(id); return v; }
+          return v + 1;
+        });
+      }, 26);
+    }, startDelay);
+    return () => { clearTimeout(t); clearInterval(id); };
+  }, [text, startDelay, reduced]);
+  return (
+    <span>
+      {text.slice(0, n)}
+      {n < text.length && <span className="text-amber animate-pulse">▍</span>}
+    </span>
+  );
+}
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
@@ -35,7 +80,7 @@ export default function Hero() {
           style={{ y, opacity }}
           className="font-disp font-semibold leading-none tracking-tight text-[clamp(56px,11vw,150px)]"
         >
-          Sandesh <span className="text-amber">Kale</span>
+          <AssembledName text="Sandesh Kale" accentFrom={8} />
         </motion.h1>
 
         <motion.p
@@ -43,7 +88,7 @@ export default function Hero() {
           style={{ opacity }}
           className="mt-7 font-disp font-medium leading-[1.08] tracking-tight text-[clamp(24px,3.6vw,44px)] text-mist/90"
         >
-          Architecting Frontier GenAI Ecosystems
+          <TypedLine text="Architecting Frontier GenAI Ecosystems" />
         </motion.p>
 
         <motion.p

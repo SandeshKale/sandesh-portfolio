@@ -1,5 +1,5 @@
 'use client';
-import { Section, Reveal, TiltCard } from './primitives';
+import { Section, Reveal, TiltCard, Eyebrow } from './primitives';
 import { logEvent } from '@/lib/telemetry';
 
 /* sys/lab — proof of work. Real repositories, real numbers, real constraints.
@@ -41,7 +41,7 @@ export default function Lab() {
   return (
     <Section id="lab" chapter="lab">
       <Reveal>
-        <div className="eyebrow">sys/lab</div>
+        <Eyebrow>sys/lab</Eyebrow>
       </Reveal>
       <Reveal delay={0.1}>
         <h2 className="h2">

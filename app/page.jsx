@@ -2,6 +2,7 @@
 import { useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import Nav from '@/components/Nav';
+import Boot from '@/components/Boot';
 import Cursor from '@/components/Cursor';
 import ScrollDirector from '@/components/ScrollDirector';
 import Hero from '@/components/Hero';
@@ -36,6 +37,7 @@ export default function Page() {
   return (
     <ThemeProvider>
     <main>
+      <Boot />
       <GlobalScene />
       <ScrollDirector />
       <Cursor />

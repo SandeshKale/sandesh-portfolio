@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Section, Reveal } from './primitives';
+import { Section, Reveal, Eyebrow } from './primitives';
 import { logEvent } from '@/lib/telemetry';
 
 /* sys/query — two live inference subsystems.
@@ -71,7 +71,7 @@ function Terminal() {
   }
 
   return (
-    <div className="rounded-[14px] border hairline bg-ink/70 backdrop-blur-md overflow-hidden h-full">
+    <div className="holo rounded-[14px] border hairline bg-ink/70 backdrop-blur-md overflow-hidden h-full">
       <div className="flex items-center gap-2 px-5 py-3 border-b hairline font-mono text-[10.5px] tracking-[0.08em] text-mute uppercase">
         <span className="w-1.5 h-1.5 rounded-full bg-amber animate-pulse" />
         grounded terminal · answers only from the verified record
@@ -142,11 +142,63 @@ function Terminal() {
 }
 
 /* ---------------- architecture consult ---------------- */
+/* The blueprint renders as an isometric structure assembling in 3D:
+   foundation blocks = component stack · pillar = the pattern · roof = guardrails.
+   A raw-mode switch flattens it back into the validated JSON — the contract itself. */
+function IsoBlueprint({ bp }) {
+  return (
+    <div className="flex justify-center py-4" style={{ perspective: 900 }} aria-hidden="true">
+      <div
+        className="relative w-[280px] h-[190px]"
+        style={{ transform: 'rotateX(52deg) rotateZ(-38deg)', transformStyle: 'preserve-3d' }}
+      >
+        {/* foundation: the component stack */}
+        <div className="absolute inset-x-0 bottom-0 grid grid-cols-2 gap-1.5" style={{ transform: 'translateZ(0px)' }}>
+          {(bp.stack || []).slice(0, 6).map((c, i) => (
+            <motion.div
+              key={c}
+              initial={{ opacity: 0, y: 26 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 + i * 0.09, duration: 0.5, ease: [0.2, 0.7, 0.2, 1] }}
+              title={c}
+              className="border border-steel/50 bg-steel/10 rounded px-1.5 py-1 font-mono text-[8px] text-steel truncate shadow-[0_10px_18px_-8px_rgb(var(--c-ink))]"
+            >
+              {c}
+            </motion.div>
+          ))}
+        </div>
+        {/* pillar: the pattern */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.75, duration: 0.5 }}
+          title={bp.pattern}
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 border border-amber/70 bg-amber/10 rounded px-2.5 py-2 font-mono text-[9px] text-amber text-center max-w-[170px] shadow-[0_0_22px_rgb(var(--c-amber)/.25)]"
+          style={{ transform: 'translate(-50%,-50%) translateZ(34px)' }}
+        >
+          {bp.pattern}
+        </motion.div>
+        {/* roof: guardrails */}
+        <motion.div
+          initial={{ opacity: 0, y: 34 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.05, duration: 0.5 }}
+          className="absolute inset-x-4 top-0 border border-ok/60 bg-ok/10 rounded px-2 py-1.5 font-mono text-[8px] text-ok"
+          style={{ transform: 'translateZ(68px)' }}
+        >
+          <span className="opacity-70">guardrails ·</span> {(bp.guardrails || []).length} active
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
 function Consult() {
   const [useCase, setUseCase] = useState('');
   const [busy, setBusy] = useState(false);
   const [bp, setBp] = useState(null);
   const [raw, setRaw] = useState('');
+  const [view, setView] = useState('structure'); // structure | json
   const [err, setErr] = useState('');
 
   async function consult(preset) {
@@ -156,6 +208,7 @@ function Consult() {
     setBusy(true);
     setBp(null);
     setRaw('');
+    setView('structure');
     logEvent('ai.consult', uc.slice(0, 40));
     try {
       const r = await fetch('/api/ai', {
@@ -180,7 +233,7 @@ function Consult() {
   }
 
   return (
-    <div className="rounded-[14px] border hairline bg-ink/70 backdrop-blur-md overflow-hidden h-full">
+    <div className="holo rounded-[14px] border hairline bg-ink/70 backdrop-blur-md overflow-hidden h-full">
       <div className="flex items-center gap-2 px-5 py-3 border-b hairline font-mono text-[10.5px] tracking-[0.08em] text-mute uppercase">
         <span className="w-1.5 h-1.5 rounded-full bg-ok animate-pulse" />
         architecture consult · structured blueprint, live
@@ -247,6 +300,24 @@ function Consult() {
               exit={{ opacity: 0 }}
               className="mt-5 pt-4 border-t border-dashed hairline space-y-4"
             >
+              <div className="flex items-center justify-between gap-3">
+                <div className="font-mono text-[9.5px] tracking-[0.12em] text-dim uppercase">blueprint · assembled from validated json</div>
+                <div className="flex rounded-lg border hairline-strong overflow-hidden font-mono text-[10px]">
+                  {['structure', 'json'].map((v) => (
+                    <button key={v} data-hot onClick={() => setView(v)}
+                      className={`px-3 py-1 transition-colors ${view === v ? 'bg-amber/15 text-amber' : 'text-mute hover:text-mist'}`}>
+                      {v}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {view === 'structure' ? (
+                <IsoBlueprint bp={bp} />
+              ) : (
+                <pre className="font-mono text-[10.5px] leading-[1.7] text-mute bg-panel2/60 rounded-lg p-3 overflow-x-auto">
+{JSON.stringify(bp, null, 2)}
+                </pre>
+              )}
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div>
                   <div className="font-mono text-[9.5px] tracking-[0.12em] text-dim uppercase">Pattern</div>
@@ -310,7 +381,7 @@ export default function Query() {
   return (
     <Section id="query" chapter="query">
       <Reveal>
-        <div className="eyebrow">sys/query</div>
+        <Eyebrow>sys/query</Eyebrow>
       </Reveal>
       <Reveal delay={0.1}>
         <h2 className="h2">

@@ -36,10 +36,10 @@ export default function Hero() {
         <motion.h1
           variants={fadeUp} initial="hidden" animate="show" custom={1}
           style={{ y, opacity }}
-          className="font-disp font-semibold leading-[1.04] tracking-[-0.02em] mx-auto max-w-[980px]"
+          className="font-disp font-semibold leading-none tracking-tight mx-auto max-w-[1040px]"
         >
-          <span className="block text-[clamp(40px,7vw,92px)]">Architecting Frontier</span>
-          <span className="block text-[clamp(40px,7vw,92px)] text-amber">GenAI Ecosystems</span>
+          <span className="block text-[clamp(44px,8vw,112px)]">Architecting Frontier</span>
+          <span className="block text-[clamp(44px,8vw,112px)] text-amber mt-2">GenAI Ecosystems</span>
         </motion.h1>
 
         <motion.p

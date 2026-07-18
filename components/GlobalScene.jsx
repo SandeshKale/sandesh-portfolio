@@ -198,43 +198,18 @@ function AgentConstellation({ count }) {
   );
 }
 
-/* ---------- phase-2: neural pipelines with packets in flight ---------- */
-function NeuralPipelines({ packetCount }) {
+/* ---------- phase-2: rolling architectural timeline wireframe ---------- */
+function TimelineRibbon({ markerCount = 26 }) {
   const group = useRef();
-  const tubeMats = useRef([]);
+  const ribbonUniforms = useMemo(
+    () => ({ uTime: { value: 0 }, uRoll: { value: 0 }, uOpacity: { value: 0 } }),
+    []
+  );
   const inst = useRef();
   const dummy = useMemo(() => new THREE.Object3D(), []);
+  const roll = useRef(0);
 
-  const curves = useMemo(() => {
-    const cs = [];
-    for (let i = 0; i < 6; i++) {
-      const yBase = (i - 2.5) * 0.75;
-      const pts = [];
-      for (let k = 0; k <= 5; k++) {
-        pts.push(
-          new THREE.Vector3(
-            -6.5 + (13 / 5) * k,
-            yBase + Math.sin(k * 1.4 + i * 2.1) * 0.9,
-            -1.2 + Math.cos(k * 1.1 + i) * 0.9
-          )
-        );
-      }
-      cs.push(new THREE.CatmullRomCurve3(pts));
-    }
-    return cs;
-  }, []);
-
-  const packets = useMemo(
-    () =>
-      Array.from({ length: packetCount }, (_, i) => ({
-        curve: i % curves.length,
-        offset: Math.random(),
-        speed: 0.05 + Math.random() * 0.09,
-      })),
-    [packetCount, curves.length]
-  );
-
-  useFrame((state) => {
+  useFrame((state, delta) => {
     const p = phaseState.current;
     const presence = window4(p, 1.45, 1.95, 2.35, 2.9);
     const g = group.current;
@@ -242,40 +217,64 @@ function NeuralPipelines({ packetCount }) {
     g.visible = presence > 0.01;
     if (!g.visible) return;
 
-    tubeMats.current.forEach((m) => m && (m.opacity = 0.16 * presence));
-    const t = state.clock.elapsedTime;
-    const boost = 1 + phaseState.velocity * 2.5; // packets rush with scroll velocity
+    // the ribbon rolls at base speed, and rushes with the visitor's scroll velocity
+    roll.current += delta * (0.35 + phaseState.velocity * 4.5);
+    ribbonUniforms.uTime.value = state.clock.elapsedTime;
+    ribbonUniforms.uRoll.value = roll.current;
+    ribbonUniforms.uOpacity.value = 0.4 * presence;
+
+    // era markers gliding along the line
     const m = inst.current;
-    packets.forEach((pk, i) => {
-      const u = (pk.offset + t * pk.speed * boost) % 1;
-      const pos = curves[pk.curve].getPointAt(u);
-      dummy.position.copy(pos);
-      dummy.scale.setScalar(0.045 * (0.7 + presence * 0.3));
+    for (let i = 0; i < markerCount; i++) {
+      const u = ((i / markerCount + roll.current * 0.06) % 1 + 1) % 1;
+      const x = -7 + u * 14;
+      const y = Math.sin(u * Math.PI * 4 + 1.2) * 0.35;
+      dummy.position.set(x, y, 0.15);
+      dummy.rotation.set(roll.current * 0.8 + i, i * 0.7, 0);
+      dummy.scale.setScalar(0.055 + (i % 4 === 0 ? 0.035 : 0));
       dummy.updateMatrix();
       m.setMatrixAt(i, dummy.matrix);
-    });
+    }
     m.instanceMatrix.needsUpdate = true;
     m.material.opacity = presence;
-    g.rotation.z = Math.sin(t * 0.1) * 0.04;
+    g.rotation.z = -0.06;
   });
 
   return (
-    <group ref={group}>
-      {curves.map((c, i) => (
-        <mesh key={i}>
-          <tubeGeometry args={[c, 48, 0.02, 6, false]} />
-          <meshBasicMaterial
-            ref={(el) => (tubeMats.current[i] = el)}
-            color={i % 2 ? '#7C96C4' : '#F0B34C'}
-            transparent
-            opacity={0}
-            blending={THREE.AdditiveBlending}
-            depthWrite={false}
-          />
-        </mesh>
-      ))}
-      <instancedMesh ref={inst} args={[undefined, undefined, packetCount]} frustumCulled={false}>
-        <sphereGeometry args={[1, 8, 8]} />
+    <group ref={group} position={[0, -0.4, -0.6]} rotation={[-0.9, 0, 0]}>
+      {/* rolling wireframe grid — vertex-displaced plane */}
+      <mesh>
+        <planeGeometry args={[16, 5, 72, 12]} />
+        <shaderMaterial
+          uniforms={ribbonUniforms}
+          transparent
+          wireframe
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+          vertexShader={`
+            uniform float uTime; uniform float uRoll; varying float vH;
+            void main(){
+              vec3 p = position;
+              float w = sin(p.x * 1.4 + uRoll * 2.0) * 0.28
+                      + sin(p.y * 2.2 + uTime * 0.6) * 0.12
+                      + sin((p.x + p.y) * 3.1 + uRoll * 3.0) * 0.08;
+              p.z += w;
+              vH = w * 1.6 + 0.5;
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+            }`}
+          fragmentShader={`
+            uniform float uOpacity; varying float vH;
+            void main(){
+              vec3 steel = vec3(0.486, 0.588, 0.769);
+              vec3 amber = vec3(0.941, 0.702, 0.298);
+              gl_FragColor = vec4(mix(steel, amber, clamp(vH, 0.0, 1.0)), uOpacity * (0.4 + vH * 0.5));
+            }`}
+        />
+      </mesh>
+      {/* era markers rolling along the timeline */}
+      <instancedMesh ref={inst} args={[undefined, undefined, markerCount]} frustumCulled={false}>
+        <octahedronGeometry args={[1, 0]} />
         <meshBasicMaterial color="#F0B34C" transparent blending={THREE.AdditiveBlending} depthWrite={false} />
       </instancedMesh>
     </group>
@@ -401,7 +400,7 @@ export default function GlobalScene() {
         <Rig />
         <CrystallineCore glass={tier.glass} />
         <AgentConstellation count={tier.nodes} />
-        <NeuralPipelines packetCount={tier.packets} />
+        <TimelineRibbon markerCount={tier.packets > 40 ? 30 : 18} />
         <Monolith />
         {tier.gutters && (
           <>

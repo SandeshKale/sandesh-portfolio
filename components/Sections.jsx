@@ -258,34 +258,45 @@ export function Contact() {
         <Reveal>
           <div className="eyebrow">sys/contact</div>
         </Reveal>
-        <motion.p
+        <motion.h2
           style={{ y, opacity }}
-          className="font-disp font-medium tracking-[-0.015em] leading-[1.05] text-[clamp(34px,6vw,72px)]"
+          className="font-disp font-medium tracking-tight leading-none text-[clamp(38px,6.5vw,84px)]"
         >
           Building something
           <br />
-          intelligent — that can&apos;t fail?
-          <br />
-          <a
-            href="https://www.linkedin.com/in/sandesh-kale"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="relative text-mist hover:text-amber transition-colors group"
-          >
-            Let&apos;s talk.&nbsp;→
-            <span className="absolute left-0 -bottom-1 h-[2px] w-full bg-amber origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
-          </a>
-        </motion.p>
-        <Reveal delay={0.15}>
-          <div className="mt-10 flex flex-wrap gap-10 font-mono text-[11.5px] tracking-[0.05em] text-dim">
+          intelligent — <span className="text-dim">that can&apos;t fail?</span>
+        </motion.h2>
+
+        <Reveal delay={0.1}>
+          <div className="mt-10 flex flex-wrap items-center gap-4">
+            <a
+              href="https://www.linkedin.com/in/sandesh-kale"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-3 rounded-xl bg-amber text-ink font-body font-bold text-[15px] px-7 py-3.5 hover:bg-[#f6c56e] transition-colors shadow-[0_0_34px_rgba(240,179,76,.25)]"
+            >
+              Connect on LinkedIn
+              <span aria-hidden>→</span>
+            </a>
+            <a
+              href="mailto:kale.sd111@gmail.com"
+              className="inline-flex items-center gap-3 rounded-xl border hairline-strong text-mist font-mono text-[13px] px-6 py-3.5 hover:border-amber/60 hover:text-amber transition-colors"
+            >
+              kale.sd111@gmail.com
+            </a>
+          </div>
+        </Reveal>
+
+        <Reveal delay={0.2}>
+          <div className="mt-12 grid sm:grid-cols-3 gap-px bg-[rgba(231,236,246,.08)] border hairline rounded-[14px] overflow-hidden max-w-[760px]">
             {[
               ['LOCATION', 'Singapore · SGT'],
-              ['LINKEDIN', '/in/sandesh-kale'],
-              ['OPEN TO', 'Architecture · AI Engineering · Advisory'],
+              ['OPEN TO', 'GenAI Architecture · Advisory'],
+              ['RESPONSE', 'Within one business day'],
             ].map(([k, v]) => (
-              <div key={k}>
-                {k}
-                <span className="block text-mute mt-1">{v}</span>
+              <div key={k} className="bg-ink/80 backdrop-blur-md px-6 py-5">
+                <div className="font-mono text-[10px] tracking-[0.12em] text-dim">{k}</div>
+                <div className="font-mono text-[12px] text-mute mt-1.5">{v}</div>
               </div>
             ))}
           </div>

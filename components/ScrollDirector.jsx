@@ -14,7 +14,7 @@ import { logEvent } from '@/lib/telemetry';
 
 const PHASES = [
   { id: '#composition', from: 0, to: 1, name: 'constellation' },
-  { id: '#observability', from: 1, to: 2, name: 'pipelines' },
+  { id: '#milestones', from: 1, to: 2, name: 'timeline' },
   { id: '#contact', from: 2, to: 3, name: 'monolith' },
 ];
 

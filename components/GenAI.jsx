@@ -2,27 +2,28 @@
 import { Section, Reveal, TiltCard } from './primitives';
 import { logEvent } from '@/lib/telemetry';
 
-/* ============ sys/composition — the constellation section ============ */
-const PATTERNS = [
+/* ============ sys/composition — architectural methodology ============ */
+
+const FRAMEWORKS = [
   {
-    h: 'Architect / Crew split',
-    m: 'planner + execution layers',
-    p: 'A frontier model plans; fast, cheap models execute. I design the split — which decisions deserve deep reasoning, which deserve latency — with typed contracts between the layers so the crew can be swapped without rewiring the system.',
+    h: 'Token-budget engineering',
+    m: 'context is a resource, not a dumping ground',
+    p: 'Every context window gets a budget: what earns its tokens, what gets summarized, what gets retrieved on demand. Systems designed this way stay fast and cheap at the hundredth integration, not just the demo.',
   },
   {
-    h: 'Multi-provider cascades',
-    m: 'fallback chains · cost-aware routing',
-    p: 'Built and shipped: LLM cascades with structured-output contracts, automatic failover across providers, and routing that weighs cost against capability per call. Treated with the same rigor as a payment flow, because in BFSI it is one.',
+    h: 'Deterministic routing over stochastic outputs',
+    m: 'the model proposes, the architecture disposes',
+    p: 'Typed contracts, schema validation, and rule-based triage wrap every model call. The LLM is a component with a failure rate — the routing layer is what makes the workflow accurate, auditable, and sub-second.',
   },
   {
-    h: 'Retrieval & context',
-    m: 'hybrid search · dynamic graph rag',
-    p: 'Vector infrastructure designed for throughput: hybrid dense-plus-keyword retrieval, graph-shaped context for entangled enterprise data, and context-window budgeting so the model reads what matters — not everything.',
+    h: 'Deterministic multi-agent state',
+    m: 'planner + crew · replayable by design',
+    p: 'Agent hand-offs run through explicit state machines, not vibes-based message passing. Every decision point is persisted and replayable — the same discipline that makes payment flows survivable makes agent crews debuggable.',
   },
   {
-    h: 'Guardrails & evals',
-    m: 'the boring parts that ship',
-    p: 'Automated evaluation harnesses, output validation, refusal boundaries, and audit trails. Alignment for enterprises is an engineering discipline: measured, versioned, and observable — never vibes.',
+    h: 'Real-time semantic caching',
+    m: 'the fastest inference is the one never run',
+    p: 'Meaning-level cache keys, hit-rate evaluation, and injection points chosen architecturally — before the router, after retrieval. Shipped in my own multi-provider cascade with cost-aware fallback routing.',
   },
 ];
 
@@ -34,25 +35,24 @@ export function Composition() {
       </Reveal>
       <Reveal delay={0.1}>
         <h2 className="h2">
-          Multi-agent systems.
+          I build resilient
           <br />
-          <span className="text-dim">Composed, not improvised.</span>
+          <span className="text-dim">intelligence layers.</span>
         </h2>
-        <p className="max-w-[640px] text-mute text-lg">
-          The core you just watched pull apart is the point: intelligence at scale is an
-          architecture problem.{' '}
-          <b className="text-mist font-medium">
-            Orchestration layers, agent boundaries, and failure domains
-          </b>{' '}
-          decided before the first token is generated.
+        <p className="max-w-[680px] text-mute text-lg">
+          By engineering deterministic routing mechanisms over stochastic model outputs, I
+          keep enterprise workflows{' '}
+          <b className="text-mist font-medium">accurate, auditable, and sub-second rapid</b>.
+          The constellation forming behind this text is the mental model: autonomous parts,
+          composed boundaries, one system.
         </p>
       </Reveal>
       <div className="mt-12 grid md:grid-cols-2 gap-5">
-        {PATTERNS.map((c, i) => (
+        {FRAMEWORKS.map((c, i) => (
           <Reveal key={c.h} delay={0.08 * i}>
             <TiltCard max={6}>
               <div
-                onMouseEnter={() => logEvent('pattern.inspect', c.h.toLowerCase())}
+                onMouseEnter={() => logEvent('framework.inspect', c.h.toLowerCase())}
                 className="rounded-[14px] border hairline bg-ink/70 backdrop-blur-md p-6 h-full"
               >
                 <h5 className="font-disp font-medium text-[20px]">{c.h}</h5>
@@ -65,56 +65,6 @@ export function Composition() {
           </Reveal>
         ))}
       </div>
-    </Section>
-  );
-}
-
-/* ============ sys/llm-observability — the pipelines section ============ */
-const SIGNALS = [
-  ['TRACES', 'End-to-end spans across agent hops — every reasoning chain reconstructable after the fact.'],
-  ['TOKENS', 'Per-route token accounting: cost attribution by feature, team, and prompt version.'],
-  ['SEMANTIC CACHE', 'Hit-rate evaluation on meaning, not strings — the fastest inference is the one never run.'],
-  ['EVALS', 'Regression suites for model behavior — quality gates in CI, not opinions in Slack.'],
-];
-
-export function Observability() {
-  return (
-    <Section id="observability" chapter="observability">
-      <Reveal>
-        <div className="eyebrow">sys/llm-observability</div>
-      </Reveal>
-      <Reveal delay={0.1}>
-        <h2 className="h2">
-          You can&apos;t align
-          <br />
-          <span className="text-dim">what you can&apos;t see.</span>
-        </h2>
-        <p className="max-w-[660px] text-mute text-lg">
-          I spent years wiring Prometheus and Grafana through mission-critical insurance
-          platforms. That discipline is now the highest-leverage skill in GenAI:{' '}
-          <b className="text-mist font-medium">
-            maximizing ROI through LLM observability
-          </b>{' '}
-          — traces, span analytics, token tracking, and semantic-caching evaluation. The
-          pipelines flowing behind this text are the mental model.
-        </p>
-      </Reveal>
-      <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-[rgba(231,236,246,.08)] border hairline rounded-[14px] overflow-hidden">
-        {SIGNALS.map(([h, p], i) => (
-          <Reveal key={h} delay={0.07 * i}>
-            <div className="bg-ink/80 backdrop-blur-md p-6 h-full">
-              <h4 className="font-mono text-[11px] tracking-[0.12em] text-amber mb-3">{h}</h4>
-              <p className="text-[13.5px] text-mute">{p}</p>
-            </div>
-          </Reveal>
-        ))}
-      </div>
-      <Reveal delay={0.2}>
-        <p className="mt-6 font-mono text-[10.5px] text-dim tracking-[0.05em]">
-          // this page practices what it preaches — your session is being traced, bottom
-          left. compile it in sys/query.
-        </p>
-      </Reveal>
     </Section>
   );
 }

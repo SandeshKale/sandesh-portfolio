@@ -6,8 +6,9 @@ import Cursor from '@/components/Cursor';
 import Telemetry from '@/components/Telemetry';
 import ScrollDirector from '@/components/ScrollDirector';
 import Hero from '@/components/Hero';
-import { Composition, Observability } from '@/components/GenAI';
-import Trace from '@/components/Trace';
+import { Composition } from '@/components/GenAI';
+import Sandbox from '@/components/Sandbox';
+import Milestones from '@/components/Milestones';
 import Query from '@/components/Query';
 import { Contact, Footer } from '@/components/Sections';
 import { logEvent } from '@/lib/telemetry';
@@ -40,8 +41,8 @@ export default function Page() {
       <Nav />
       <Hero />
       <Composition />
-      <Observability />
-      <Trace />
+      <Sandbox />
+      <Milestones />
       <Query />
       <Contact />
       <Footer />

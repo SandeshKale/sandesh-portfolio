@@ -92,6 +92,16 @@ export async function POST(req) {
       { role: 'system', content: PROFILE },
       { role: 'user', content: q },
     ];
+  } else if (body.mode === 'sandbox') {
+    const cfg = JSON.stringify(body.config || {}).slice(0, 600);
+    messages = [
+      {
+        role: 'system',
+        content:
+          "You are the architecture co-processor of sandesh-kale.dev. A visitor configured a RAG pipeline in the live sandbox. In <=90 words, plain text, dry and precise like a principal architect's review comment: name the strongest property of this configuration, its sharpest tradeoff, and one condition under which you would change it. No greetings, no markdown, no emojis.",
+      },
+      { role: 'user', content: `CONFIG: ${cfg}` },
+    ];
   } else if (body.mode === 'report') {
     const events = Array.isArray(body.events) ? body.events.slice(-80) : [];
     const log = events

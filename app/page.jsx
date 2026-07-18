@@ -3,14 +3,15 @@ import { useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import Nav from '@/components/Nav';
 import Cursor from '@/components/Cursor';
-import Telemetry from '@/components/Telemetry';
 import ScrollDirector from '@/components/ScrollDirector';
 import Hero from '@/components/Hero';
 import { Composition } from '@/components/GenAI';
 import Sandbox from '@/components/Sandbox';
 import Milestones from '@/components/Milestones';
 import Query from '@/components/Query';
+import Lab from '@/components/Lab';
 import { Contact, Footer } from '@/components/Sections';
+import { ThemeProvider } from '@/lib/theme';
 import { logEvent } from '@/lib/telemetry';
 
 const GlobalScene = dynamic(() => import('@/components/GlobalScene'), { ssr: false });
@@ -33,19 +34,21 @@ export default function Page() {
   }, []);
 
   return (
+    <ThemeProvider>
     <main>
       <GlobalScene />
       <ScrollDirector />
       <Cursor />
-      <Telemetry />
       <Nav />
       <Hero />
       <Composition />
       <Sandbox />
       <Milestones />
+      <Lab />
       <Query />
       <Contact />
       <Footer />
     </main>
+    </ThemeProvider>
   );
 }

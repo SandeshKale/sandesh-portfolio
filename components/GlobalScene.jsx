@@ -4,6 +4,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { MeshTransmissionMaterial } from '@react-three/drei';
 import * as THREE from 'three';
 import { phaseState } from '@/lib/scrollPhase';
+import { useTheme, PALETTES } from '@/lib/theme';
 
 /* ============================================================
    The Architecture of Thought.
@@ -11,9 +12,6 @@ import { phaseState } from '@/lib/scrollPhase';
    Scroll conducts it through four states:
    0 crystalline core → 1 agent constellation → 2 neural pipelines → 3 obsidian monolith
    ============================================================ */
-
-const AMBER = new THREE.Color('#F0B34C');
-const STEEL = new THREE.Color('#7C96C4');
 
 /* smooth window: 0 outside [a,d], 1 inside [b,c], eased edges */
 function window4(x, a, b, c, d) {
@@ -39,7 +37,7 @@ function usePerfTier() {
 }
 
 /* ---------- phase-0 core: glass polyhedron + displaced wire shell ---------- */
-function CrystallineCore({ glass }) {
+function CrystallineCore({ glass, pal }) {
   const group = useRef();
   const shellMat = useRef();
   const innerRef = useRef();
@@ -49,6 +47,8 @@ function CrystallineCore({ glass }) {
       uTime: { value: 0 },
       uAmp: { value: 0.1 },
       uOpacity: { value: 0.5 },
+      uColA: { value: new THREE.Color(pal.wireA) },
+      uColB: { value: new THREE.Color(pal.wireB) },
     }),
     []
   );
@@ -90,13 +90,13 @@ function CrystallineCore({ glass }) {
             ior={1.45}
             chromaticAberration={0.05}
             anisotropicBlur={0.2}
-            color="#aebfdd"
-            attenuationColor="#F0B34C"
+            color={pal.glass}
+            attenuationColor={pal.attenuation}
             attenuationDistance={2.2}
           />
         ) : (
           <meshPhysicalMaterial
-            color="#5d6f92"
+            color={pal.glass}
             metalness={0.15}
             roughness={0.2}
             transparent
@@ -114,7 +114,7 @@ function CrystallineCore({ glass }) {
           transparent
           wireframe
           depthWrite={false}
-          blending={THREE.AdditiveBlending}
+          blending={pal.additive ? THREE.AdditiveBlending : THREE.NormalBlending}
           vertexShader={`
             uniform float uTime; uniform float uAmp; varying float vN;
             void main(){
@@ -126,11 +126,9 @@ function CrystallineCore({ glass }) {
               gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
             }`}
           fragmentShader={`
-            uniform float uOpacity; varying float vN;
+            uniform float uOpacity; uniform vec3 uColA; uniform vec3 uColB; varying float vN;
             void main(){
-              vec3 steel = vec3(0.486, 0.588, 0.769);
-              vec3 amber = vec3(0.941, 0.702, 0.298);
-              gl_FragColor = vec4(mix(steel, amber, vN), uOpacity * (0.35 + vN*0.65));
+              gl_FragColor = vec4(mix(uColA, uColB, vN), uOpacity * (0.35 + vN*0.65));
             }`}
         />
       </mesh>
@@ -139,7 +137,7 @@ function CrystallineCore({ glass }) {
 }
 
 /* ---------- phase-1: the core disperses into an agent constellation ---------- */
-function AgentConstellation({ count }) {
+function AgentConstellation({ count, pal }) {
   const inst = useRef();
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const dirs = useMemo(() => {
@@ -186,8 +184,8 @@ function AgentConstellation({ count }) {
     <instancedMesh ref={inst} args={[undefined, undefined, count]} frustumCulled={false}>
       <octahedronGeometry args={[1, 0]} />
       <meshPhysicalMaterial
-        color="#c8d4ea"
-        emissive="#F0B34C"
+        color={pal.glass}
+        emissive={pal.nodeEmissive}
         emissiveIntensity={0.35}
         metalness={0.6}
         roughness={0.25}
@@ -199,10 +197,10 @@ function AgentConstellation({ count }) {
 }
 
 /* ---------- phase-2: rolling architectural timeline wireframe ---------- */
-function TimelineRibbon({ markerCount = 26 }) {
+function TimelineRibbon({ markerCount = 26, pal }) {
   const group = useRef();
   const ribbonUniforms = useMemo(
-    () => ({ uTime: { value: 0 }, uRoll: { value: 0 }, uOpacity: { value: 0 } }),
+    () => ({ uTime: { value: 0 }, uRoll: { value: 0 }, uOpacity: { value: 0 }, uColA: { value: new THREE.Color(pal.wireA) }, uColB: { value: new THREE.Color(pal.wireB) } }),
     []
   );
   const inst = useRef();
@@ -250,7 +248,7 @@ function TimelineRibbon({ markerCount = 26 }) {
           transparent
           wireframe
           depthWrite={false}
-          blending={THREE.AdditiveBlending}
+          blending={pal.additive ? THREE.AdditiveBlending : THREE.NormalBlending}
           side={THREE.DoubleSide}
           vertexShader={`
             uniform float uTime; uniform float uRoll; varying float vH;
@@ -264,25 +262,23 @@ function TimelineRibbon({ markerCount = 26 }) {
               gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
             }`}
           fragmentShader={`
-            uniform float uOpacity; varying float vH;
+            uniform float uOpacity; uniform vec3 uColA; uniform vec3 uColB; varying float vH;
             void main(){
-              vec3 steel = vec3(0.486, 0.588, 0.769);
-              vec3 amber = vec3(0.941, 0.702, 0.298);
-              gl_FragColor = vec4(mix(steel, amber, clamp(vH, 0.0, 1.0)), uOpacity * (0.4 + vH * 0.5));
+              gl_FragColor = vec4(mix(uColA, uColB, clamp(vH, 0.0, 1.0)), uOpacity * (0.4 + vH * 0.5));
             }`}
         />
       </mesh>
       {/* era markers rolling along the timeline */}
       <instancedMesh ref={inst} args={[undefined, undefined, markerCount]} frustumCulled={false}>
         <octahedronGeometry args={[1, 0]} />
-        <meshBasicMaterial color="#F0B34C" transparent blending={THREE.AdditiveBlending} depthWrite={false} />
+        <meshBasicMaterial color={pal.marker} transparent blending={pal.additive ? THREE.AdditiveBlending : THREE.NormalBlending} depthWrite={false} />
       </instancedMesh>
     </group>
   );
 }
 
 /* ---------- phase-3: the obsidian monolith ---------- */
-function Monolith() {
+function Monolith({ pal }) {
   const mesh = useRef();
   useFrame((state) => {
     const p = phaseState.current;
@@ -303,7 +299,7 @@ function Monolith() {
     <mesh ref={mesh} visible={false}>
       <boxGeometry args={[1.15, 2.7, 0.5]} />
       <meshPhysicalMaterial
-        color="#0d1017"
+        color={pal.monolith}
         metalness={0.95}
         roughness={0.08}
         clearcoat={1}
@@ -315,7 +311,7 @@ function Monolith() {
 }
 
 /* ---------- gutters: floating vector clusters framing the copy ---------- */
-function GutterCluster({ side, count = 34 }) {
+function GutterCluster({ side, count = 34, pal }) {
   const inst = useRef();
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const { viewport } = useThree();
@@ -360,7 +356,7 @@ function GutterCluster({ side, count = 34 }) {
   return (
     <instancedMesh ref={inst} args={[undefined, undefined, count]} frustumCulled={false}>
       <tetrahedronGeometry args={[1, 0]} />
-      <meshStandardMaterial color="#7C96C4" emissive="#7C96C4" emissiveIntensity={0.25} transparent metalness={0.5} roughness={0.4} />
+      <meshStandardMaterial color={pal.wireA} emissive={pal.wireA} emissiveIntensity={pal.additive ? 0.25 : 0.05} transparent metalness={0.5} roughness={0.4} />
     </instancedMesh>
   );
 }
@@ -383,6 +379,8 @@ function Rig() {
 
 export default function GlobalScene() {
   const tier = usePerfTier();
+  const { mode } = useTheme();
+  const pal = PALETTES[mode];
   const [reduced, setReduced] = useState(false);
   useEffect(() => {
     setReduced(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -391,21 +389,21 @@ export default function GlobalScene() {
 
   return (
     <div className="fixed inset-0 -z-10 pointer-events-none" aria-hidden="true">
-      <Canvas dpr={tier.dpr} camera={{ position: [0, 0, 6.5], fov: 46 }} gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}>
-        <fog attach="fog" args={['#0B0E15', 8, 15]} />
-        <ambientLight intensity={0.3} />
-        <spotLight position={[5, 7, 6]} intensity={2.4} color="#ffe3b0" angle={0.5} penumbra={0.8} />
-        <directionalLight position={[-6, -3, -4]} intensity={0.8} color="#7C96C4" />
-        <pointLight position={[0, 0, -6]} intensity={0.7} color="#3a4a6b" />
+      <Canvas key={mode} dpr={tier.dpr} camera={{ position: [0, 0, 6.5], fov: 46 }} gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}>
+        <fog attach="fog" args={[pal.fog, 8, 15]} />
+        <ambientLight intensity={pal.ambient} />
+        <spotLight position={[5, 7, 6]} intensity={pal.spot} color={mode === 'dark' ? '#ffe3b0' : '#ffffff'} angle={0.5} penumbra={0.8} />
+        <directionalLight position={[-6, -3, -4]} intensity={0.8} color={pal.wireA} />
+        <pointLight position={[0, 0, -6]} intensity={0.7} color={pal.wireA} />
         <Rig />
-        <CrystallineCore glass={tier.glass} />
-        <AgentConstellation count={tier.nodes} />
-        <TimelineRibbon markerCount={tier.packets > 40 ? 30 : 18} />
-        <Monolith />
+        <CrystallineCore glass={tier.glass} pal={pal} />
+        <AgentConstellation count={tier.nodes} pal={pal} />
+        <TimelineRibbon markerCount={tier.packets > 40 ? 30 : 18} pal={pal} />
+        <Monolith pal={pal} />
         {tier.gutters && (
           <>
-            <GutterCluster side={-1} />
-            <GutterCluster side={1} />
+            <GutterCluster side={-1} pal={pal} />
+            <GutterCluster side={1} pal={pal} />
           </>
         )}
       </Canvas>

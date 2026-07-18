@@ -3,10 +3,42 @@
 @tailwind utilities;
 
 :root {
-  --ink: #0b0e15;
-  --amber: #f0b34c;
+  /* rgb triplets so Tailwind opacity modifiers work */
+  --c-ink: 11 14 21;
+  --c-panel: 16 20 29;
+  --c-panel2: 20 25 38;
+  --c-text: 233 236 242;
+  --c-mute: 138 146 166;
+  --c-dim: 90 98 117;
+  --c-amber: 240 179 76;
+  --c-steel: 124 150 196;
+  --c-ok: 95 191 138;
   --line: rgba(231, 236, 246, 0.08);
   --line-strong: rgba(231, 236, 246, 0.16);
+  --veil-a: rgba(11, 14, 21, 0.55);
+  --veil-b: rgba(11, 14, 21, 0.2);
+  --hero-a: rgba(11, 14, 21, 0.25);
+  --hero-b: rgba(11, 14, 21, 0.78);
+  --grain: 0.05;
+}
+
+.light {
+  --c-ink: 243 241 236;
+  --c-panel: 251 250 247;
+  --c-panel2: 235 232 224;
+  --c-text: 26 29 38;
+  --c-mute: 84 92 110;
+  --c-dim: 138 143 156;
+  --c-amber: 154 102 15;
+  --c-steel: 61 83 121;
+  --c-ok: 33 128 79;
+  --line: rgba(26, 29, 38, 0.1);
+  --line-strong: rgba(26, 29, 38, 0.2);
+  --veil-a: rgba(243, 241, 236, 0.62);
+  --veil-b: rgba(243, 241, 236, 0.25);
+  --hero-a: rgba(243, 241, 236, 0.3);
+  --hero-b: rgba(243, 241, 236, 0.82);
+  --grain: 0.035;
 }
 
 html {
@@ -14,16 +46,17 @@ html {
 }
 
 body {
-  background: var(--ink);
-  color: #e9ecf2;
+  background: rgb(var(--c-ink));
+  color: rgb(var(--c-text));
   font-family: Satoshi, sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.4s ease, color 0.4s ease;
 }
 
 ::selection {
-  background: #f0b34c;
-  color: #0b0e15;
+  background: rgb(var(--c-amber));
+  color: rgb(var(--c-ink));
 }
 
 /* film grain */
@@ -33,14 +66,14 @@ body::after {
   inset: 0;
   pointer-events: none;
   z-index: 60;
-  opacity: 0.05;
+  opacity: var(--grain);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 a:focus-visible,
 button:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid var(--amber);
+  outline: 2px solid rgb(var(--c-amber));
   outline-offset: 3px;
   border-radius: 2px;
 }
@@ -59,7 +92,7 @@ button:focus-visible,
   content: '';
   height: 1px;
   flex: 0 0 46px;
-  background: linear-gradient(90deg, #f0b34c, transparent);
+  background: linear-gradient(90deg, rgb(var(--c-amber)), transparent);
 }
 
 .h2 {
@@ -69,6 +102,21 @@ button:focus-visible,
 
 .tag {
   @apply font-mono text-[10px] tracking-[0.05em] text-steel border border-steel/30 px-2.5 py-[3px] rounded-full;
+}
+
+/* readability over the fixed 3D layer */
+section:not(#hero) > div {
+  position: relative;
+}
+section:not(#hero)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(80% 80% at 50% 50%, var(--veil-a), var(--veil-b));
+  pointer-events: none;
+}
+.hero-veil {
+  background: radial-gradient(90% 70% at 50% 45%, var(--hero-a) 0%, var(--hero-b) 100%);
 }
 
 @media (pointer: coarse) {
@@ -81,16 +129,4 @@ button:focus-visible,
   html {
     scroll-behavior: auto;
   }
-}
-
-/* readability over the fixed 3D layer */
-section:not(#hero) > div {
-  position: relative;
-}
-section:not(#hero)::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(80% 80% at 50% 50%, rgba(11, 14, 21, 0.55), rgba(11, 14, 21, 0.2));
-  pointer-events: none;
 }

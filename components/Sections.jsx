@@ -291,7 +291,7 @@ export function Contact() {
           <div className="mt-12 grid sm:grid-cols-3 gap-px bg-[rgba(231,236,246,.08)] border hairline rounded-[14px] overflow-hidden max-w-[760px]">
             {[
               ['LOCATION', 'Singapore · SGT'],
-              ['OPEN TO', 'GenAI Architecture · Advisory'],
+              ['OPEN TO', 'Solutions Architect · GenAI Architect · Advisory'],
               ['RESPONSE', 'Within one business day'],
             ].map(([k, v]) => (
               <div key={k} className="bg-ink/80 backdrop-blur-md px-6 py-5">

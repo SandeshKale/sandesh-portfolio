@@ -2,12 +2,13 @@
 import { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { useTheme, PALETTES } from '@/lib/theme';
 
 /* Small isolated wireframe previews for the milestone tracker.
    One tiny canvas each, dpr-capped, geometry matched to the era:
    lattice (BPM grids) → torus (migration loops) → sphere (coreless) → icosa (composed platform) */
 
-function Wire({ geo, hover, active }) {
+function Wire({ geo, hover, active, pal }) {
   const ref = useRef();
   useFrame((state, delta) => {
     const m = ref.current;
@@ -17,7 +18,7 @@ function Wire({ geo, hover, active }) {
     m.rotation.x += delta * speed * 0.45;
   });
 
-  const color = active ? '#F0B34C' : '#7C96C4';
+  const color = active ? pal.wireB : pal.wireA;
   return (
     <mesh ref={ref}>
       {geo === 'lattice' && <boxGeometry args={[1.5, 1.5, 1.5, 3, 3, 3]} />}
@@ -29,7 +30,7 @@ function Wire({ geo, hover, active }) {
         wireframe
         transparent
         opacity={hover ? 0.95 : 0.55}
-        blending={THREE.AdditiveBlending}
+        blending={pal.additive ? THREE.AdditiveBlending : THREE.NormalBlending}
         depthWrite={false}
       />
     </mesh>
@@ -37,10 +38,12 @@ function Wire({ geo, hover, active }) {
 }
 
 export default function MiniWire({ geo, hover, active }) {
+  const { mode } = useTheme();
+  const pal = PALETTES[mode];
   return (
     <div className="w-[170px] h-[170px] md:w-[200px] md:h-[200px]" aria-hidden="true">
-      <Canvas dpr={1} camera={{ position: [0, 0, 3.1], fov: 45 }} gl={{ antialias: true, alpha: true }}>
-        <Wire geo={geo} hover={hover} active={active} />
+      <Canvas key={mode} dpr={1} camera={{ position: [0, 0, 3.1], fov: 45 }} gl={{ antialias: true, alpha: true }}>
+        <Wire geo={geo} hover={hover} active={active} pal={pal} />
       </Canvas>
     </div>
   );

@@ -4,15 +4,15 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        ink: '#0B0E15',
-        panel: '#10141D',
-        panel2: '#141926',
-        mist: '#E9ECF2',
-        mute: '#8A92A6',
-        dim: '#5A6275',
-        amber: '#F0B34C',
-        steel: '#7C96C4',
-        ok: '#5FBF8A',
+        ink: 'rgb(var(--c-ink) / <alpha-value>)',
+        panel: 'rgb(var(--c-panel) / <alpha-value>)',
+        panel2: 'rgb(var(--c-panel2) / <alpha-value>)',
+        mist: 'rgb(var(--c-text) / <alpha-value>)',
+        mute: 'rgb(var(--c-mute) / <alpha-value>)',
+        dim: 'rgb(var(--c-dim) / <alpha-value>)',
+        amber: 'rgb(var(--c-amber) / <alpha-value>)',
+        steel: 'rgb(var(--c-steel) / <alpha-value>)',
+        ok: 'rgb(var(--c-ok) / <alpha-value>)',
       },
       fontFamily: {
         disp: ['"Clash Display"', 'sans-serif'],

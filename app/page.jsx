@@ -1,16 +1,18 @@
 'use client';
 import { useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import Nav from '@/components/Nav';
 import Cursor from '@/components/Cursor';
 import Telemetry from '@/components/Telemetry';
+import ScrollDirector from '@/components/ScrollDirector';
 import Hero from '@/components/Hero';
-import Thesis from '@/components/Thesis';
-import Principles from '@/components/Principles';
+import { Composition, Observability } from '@/components/GenAI';
 import Trace from '@/components/Trace';
-import Topology from '@/components/Topology';
-import { Stack, AISection, Leadership, Now, Contact, Footer } from '@/components/Sections';
 import Query from '@/components/Query';
+import { Contact, Footer } from '@/components/Sections';
 import { logEvent } from '@/lib/telemetry';
+
+const GlobalScene = dynamic(() => import('@/components/GlobalScene'), { ssr: false });
 
 export default function Page() {
   const maxDepth = useRef(0);
@@ -31,19 +33,16 @@ export default function Page() {
 
   return (
     <main>
+      <GlobalScene />
+      <ScrollDirector />
       <Cursor />
       <Telemetry />
       <Nav />
       <Hero />
-      <Thesis />
-      <Principles />
+      <Composition />
+      <Observability />
       <Trace />
-      <Topology />
-      <Stack />
-      <AISection />
       <Query />
-      <Leadership />
-      <Now />
       <Contact />
       <Footer />
     </main>

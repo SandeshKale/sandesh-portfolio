@@ -1,10 +1,22 @@
-# sandesh-kale-portfolio · v2
+# sandesh-kale-portfolio · v3 — GenAI Solutions Architect
 
-Next.js 14 (App Router) · Tailwind CSS · Framer Motion · React Three Fiber
+Next.js 14 (App Router) · Tailwind CSS · Framer Motion · React Three Fiber · GSAP ScrollTrigger · Groq
 
-An interactive portfolio built as a self-instrumenting system: a live telemetry
-console logs the visitor's session, the career renders as a distributed trace,
-and a 3D message-sphere carries the hero.
+"The Architecture of Thought": a single fixed full-viewport 3D scene runs behind
+the whole page and morphs through four states as GSAP ScrollTrigger conducts it —
+crystalline core (hero) → agent constellation (composition) → neural pipelines
+(observability) → obsidian monolith (contact). A live telemetry console traces the
+visitor's session; a Groq-powered terminal answers questions grounded in the real
+career record and compiles the visitor's own telemetry into an SRE-style
+post-session review.
+
+Scene phase state is bridged from GSAP (DOM) to R3F (WebGL) through a shared
+mutable ref (`lib/scrollPhase.js`) — zero React re-renders on scroll. Instanced
+meshes for constellations/packets/gutters; automatic performance tiering (DPR,
+instance counts, transmission materials) by device class; `prefers-reduced-motion`
+disables the scene entirely.
+
+Deploy note: set `GROQ_API_KEY` in Vercel → Settings → Environment Variables.
 
 ## Run locally
 

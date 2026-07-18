@@ -1,7 +1,7 @@
 'use client';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
-const links = ['thesis', 'trace', 'topology', 'ai', 'query', 'contact'];
+const links = ['composition', 'observability', 'trace', 'query', 'contact'];
 
 export default function Nav() {
   const { scrollYProgress, scrollY } = useScroll();

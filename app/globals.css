@@ -82,3 +82,15 @@ button:focus-visible,
     scroll-behavior: auto;
   }
 }
+
+/* readability over the fixed 3D layer */
+section:not(#hero) > div {
+  position: relative;
+}
+section:not(#hero)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(80% 80% at 50% 50%, rgba(11, 14, 21, 0.55), rgba(11, 14, 21, 0.2));
+  pointer-events: none;
+}

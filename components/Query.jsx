@@ -96,7 +96,7 @@ export default function Query() {
       </Reveal>
       <Reveal delay={0.1}>
         <h2 className="h2">
-          Interrogate the system.
+          Interrogate the architect.
           <br />
           <span className="text-dim">It answers for its owner.</span>
         </h2>

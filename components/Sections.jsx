@@ -264,7 +264,7 @@ export function Contact() {
         >
           Building something
           <br />
-          that can&apos;t fail?
+          intelligent — that can&apos;t fail?
           <br />
           <a
             href="https://www.linkedin.com/in/sandesh-kale"

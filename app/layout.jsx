@@ -1,13 +1,13 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'Sandesh Kale — Systems that stay up',
+  title: 'Sandesh Kale — GenAI Solutions Architect',
   description:
-    'Lead Backend Engineer at Prudential Singapore. Enterprise AI that actually works in BFSI — distributed systems, event-driven architecture, LLM integration, cloud-native platforms.',
+    'Architecting frontier GenAI ecosystems — LLM orchestration, multi-agent workflows, real-time RAG, and production-grade guardrails, on a decade of BFSI core-systems engineering.',
   openGraph: {
-    title: 'Sandesh Kale — Systems that stay up',
+    title: 'Sandesh Kale — GenAI Solutions Architect',
     description:
-      'Enterprise backend architecture. Event-driven platforms. AI as a force multiplier.',
+      'LLM orchestration layers to production-grade guardrails. Enterprise intelligence at scale.',
     type: 'website',
   },
 };

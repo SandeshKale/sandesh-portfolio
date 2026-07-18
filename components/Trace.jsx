@@ -94,12 +94,12 @@ export default function Trace() {
         </Reveal>
         <Reveal delay={0.1}>
           <h2 className="h2">
-            One career.
+            The substrate.
             <br />
-            <span className="text-dim">Rendered as a distributed trace.</span>
+            <span className="text-dim">A decade of enterprise core, rendered as a trace.</span>
           </h2>
           <p className="max-w-[600px] text-mute text-lg">
-            Ten years, four spans. Scroll, and the trace records. The active span is
+            GenAI architecture is only as strong as the substrate beneath it. Ten years, four spans — scroll, and the trace records. The active span is
             still running.
           </p>
         </Reveal>

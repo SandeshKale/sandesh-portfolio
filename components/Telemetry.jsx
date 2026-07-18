@@ -29,8 +29,8 @@ export default function Telemetry() {
       );
     });
     logEvent('session.start', 'visitor connected');
-    const t1 = setTimeout(() => logEvent('hero.render', '3d topology online'), 700);
-    const t2 = setTimeout(() => logEvent('fonts.loaded', 'clash-display · satoshi'), 1500);
+    const t1 = setTimeout(() => logEvent('orchestrator.boot', 'core online · crystalline'), 700);
+    const t2 = setTimeout(() => logEvent('span.open', 'session-trace · tokens: counting'), 1500);
     const vis = () =>
       logEvent(document.hidden ? 'session.background' : 'session.resume');
     document.addEventListener('visibilitychange', vis);

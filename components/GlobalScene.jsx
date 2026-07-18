@@ -1,0 +1,415 @@
+'use client';
+import { useMemo, useRef, useEffect, useState } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { MeshTransmissionMaterial } from '@react-three/drei';
+import * as THREE from 'three';
+import { phaseState } from '@/lib/scrollPhase';
+
+/* ============================================================
+   The Architecture of Thought.
+   One fixed, full-viewport scene behind the entire page.
+   Scroll conducts it through four states:
+   0 crystalline core → 1 agent constellation → 2 neural pipelines → 3 obsidian monolith
+   ============================================================ */
+
+const AMBER = new THREE.Color('#F0B34C');
+const STEEL = new THREE.Color('#7C96C4');
+
+/* smooth window: 0 outside [a,d], 1 inside [b,c], eased edges */
+function window4(x, a, b, c, d) {
+  const up = THREE.MathUtils.smoothstep(x, a, b);
+  const down = 1 - THREE.MathUtils.smoothstep(x, c, d);
+  return up * down;
+}
+
+function usePerfTier() {
+  const [tier, setTier] = useState(null);
+  useEffect(() => {
+    const mobile = window.innerWidth < 768;
+    const weak =
+      (navigator.hardwareConcurrency || 8) <= 4 ||
+      (navigator.deviceMemory && navigator.deviceMemory <= 4);
+    setTier(
+      mobile || weak
+        ? { name: 'low', dpr: [1, 1.2], nodes: 36, packets: 26, gutters: false, glass: false }
+        : { name: 'high', dpr: [1, 1.75], nodes: 64, packets: 64, gutters: true, glass: true }
+    );
+  }, []);
+  return tier;
+}
+
+/* ---------- phase-0 core: glass polyhedron + displaced wire shell ---------- */
+function CrystallineCore({ glass }) {
+  const group = useRef();
+  const shellMat = useRef();
+  const innerRef = useRef();
+
+  const shellUniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uAmp: { value: 0.1 },
+      uOpacity: { value: 0.5 },
+    }),
+    []
+  );
+
+  useFrame((state, delta) => {
+    const p = phaseState.current;
+    const vel = phaseState.velocity;
+    const g = group.current;
+    if (!g) return;
+
+    // presence: full at phase 0, gone by 1.4
+    const presence = 1 - THREE.MathUtils.smoothstep(p, 0.55, 1.35);
+    g.visible = presence > 0.01;
+    if (!g.visible) return;
+
+    // scroll-synced rotation: a full revolution across the first phase
+    g.rotation.y = p * Math.PI * 2 + state.clock.elapsedTime * 0.08;
+    g.rotation.x = Math.sin(state.clock.elapsedTime * 0.15) * 0.12;
+
+    const s = presence * (1 + Math.sin(state.clock.elapsedTime * 0.8) * 0.015);
+    g.scale.setScalar(s);
+
+    // the shell breathes; scroll velocity and the pull-apart both amplify displacement
+    shellUniforms.uTime.value = state.clock.elapsedTime;
+    shellUniforms.uAmp.value = 0.08 + vel * 0.45 + THREE.MathUtils.smoothstep(p, 0.2, 0.9) * 0.6;
+    shellUniforms.uOpacity.value = 0.55 * presence;
+    if (innerRef.current) innerRef.current.rotation.y = -state.clock.elapsedTime * 0.05;
+  });
+
+  return (
+    <group ref={group}>
+      <mesh ref={innerRef}>
+        <icosahedronGeometry args={[1.05, 1]} />
+        {glass ? (
+          <MeshTransmissionMaterial
+            transmission={1}
+            thickness={0.65}
+            roughness={0.12}
+            ior={1.45}
+            chromaticAberration={0.05}
+            anisotropicBlur={0.2}
+            color="#aebfdd"
+            attenuationColor="#F0B34C"
+            attenuationDistance={2.2}
+          />
+        ) : (
+          <meshPhysicalMaterial
+            color="#5d6f92"
+            metalness={0.15}
+            roughness={0.2}
+            transparent
+            opacity={0.4}
+            clearcoat={0.8}
+          />
+        )}
+      </mesh>
+      {/* displaced wire shell — cheap trig noise vertex shader */}
+      <mesh>
+        <icosahedronGeometry args={[1.35, 3]} />
+        <shaderMaterial
+          ref={shellMat}
+          uniforms={shellUniforms}
+          transparent
+          wireframe
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          vertexShader={`
+            uniform float uTime; uniform float uAmp; varying float vN;
+            void main(){
+              vec3 p = position;
+              float n = sin(p.x*2.3 + uTime) + sin(p.y*3.1 + uTime*1.3) + sin(p.z*4.2 + uTime*0.7);
+              n *= 0.3333;
+              p += normal * n * uAmp;
+              vN = n * 0.5 + 0.5;
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+            }`}
+          fragmentShader={`
+            uniform float uOpacity; varying float vN;
+            void main(){
+              vec3 steel = vec3(0.486, 0.588, 0.769);
+              vec3 amber = vec3(0.941, 0.702, 0.298);
+              gl_FragColor = vec4(mix(steel, amber, vN), uOpacity * (0.35 + vN*0.65));
+            }`}
+        />
+      </mesh>
+    </group>
+  );
+}
+
+/* ---------- phase-1: the core disperses into an agent constellation ---------- */
+function AgentConstellation({ count }) {
+  const inst = useRef();
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const dirs = useMemo(() => {
+    const arr = [];
+    const phi = Math.PI * (3 - Math.sqrt(5));
+    for (let i = 0; i < count; i++) {
+      const y = 1 - (i / (count - 1)) * 2;
+      const r = Math.sqrt(1 - y * y);
+      const t = phi * i;
+      arr.push({
+        dir: new THREE.Vector3(Math.cos(t) * r, y, Math.sin(t) * r),
+        wob: Math.random() * Math.PI * 2,
+        spin: 0.3 + Math.random() * 0.8,
+        size: 0.5 + Math.random() * 0.9,
+      });
+    }
+    return arr;
+  }, [count]);
+
+  useFrame((state) => {
+    const p = phaseState.current;
+    const m = inst.current;
+    if (!m) return;
+    const presence = window4(p, 0.45, 0.95, 1.55, 2.15);
+    m.visible = presence > 0.01;
+    m.material.opacity = presence;
+    if (!m.visible) return;
+
+    const t = state.clock.elapsedTime;
+    const radius = 0.4 + THREE.MathUtils.smoothstep(p, 0.45, 1.1) * 2.6;
+    dirs.forEach((d, i) => {
+      const wob = Math.sin(t * d.spin + d.wob) * 0.18;
+      dummy.position.copy(d.dir).multiplyScalar(radius + wob);
+      dummy.rotation.set(t * d.spin, d.wob + t * 0.4, 0);
+      dummy.scale.setScalar(0.07 * d.size * (0.6 + presence * 0.4));
+      dummy.updateMatrix();
+      m.setMatrixAt(i, dummy.matrix);
+    });
+    m.instanceMatrix.needsUpdate = true;
+    m.rotation.y = t * 0.05 + p * 1.2;
+  });
+
+  return (
+    <instancedMesh ref={inst} args={[undefined, undefined, count]} frustumCulled={false}>
+      <octahedronGeometry args={[1, 0]} />
+      <meshPhysicalMaterial
+        color="#c8d4ea"
+        emissive="#F0B34C"
+        emissiveIntensity={0.35}
+        metalness={0.6}
+        roughness={0.25}
+        transparent
+        clearcoat={1}
+      />
+    </instancedMesh>
+  );
+}
+
+/* ---------- phase-2: neural pipelines with packets in flight ---------- */
+function NeuralPipelines({ packetCount }) {
+  const group = useRef();
+  const tubeMats = useRef([]);
+  const inst = useRef();
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+
+  const curves = useMemo(() => {
+    const cs = [];
+    for (let i = 0; i < 6; i++) {
+      const yBase = (i - 2.5) * 0.75;
+      const pts = [];
+      for (let k = 0; k <= 5; k++) {
+        pts.push(
+          new THREE.Vector3(
+            -6.5 + (13 / 5) * k,
+            yBase + Math.sin(k * 1.4 + i * 2.1) * 0.9,
+            -1.2 + Math.cos(k * 1.1 + i) * 0.9
+          )
+        );
+      }
+      cs.push(new THREE.CatmullRomCurve3(pts));
+    }
+    return cs;
+  }, []);
+
+  const packets = useMemo(
+    () =>
+      Array.from({ length: packetCount }, (_, i) => ({
+        curve: i % curves.length,
+        offset: Math.random(),
+        speed: 0.05 + Math.random() * 0.09,
+      })),
+    [packetCount, curves.length]
+  );
+
+  useFrame((state) => {
+    const p = phaseState.current;
+    const presence = window4(p, 1.45, 1.95, 2.35, 2.9);
+    const g = group.current;
+    if (!g) return;
+    g.visible = presence > 0.01;
+    if (!g.visible) return;
+
+    tubeMats.current.forEach((m) => m && (m.opacity = 0.16 * presence));
+    const t = state.clock.elapsedTime;
+    const boost = 1 + phaseState.velocity * 2.5; // packets rush with scroll velocity
+    const m = inst.current;
+    packets.forEach((pk, i) => {
+      const u = (pk.offset + t * pk.speed * boost) % 1;
+      const pos = curves[pk.curve].getPointAt(u);
+      dummy.position.copy(pos);
+      dummy.scale.setScalar(0.045 * (0.7 + presence * 0.3));
+      dummy.updateMatrix();
+      m.setMatrixAt(i, dummy.matrix);
+    });
+    m.instanceMatrix.needsUpdate = true;
+    m.material.opacity = presence;
+    g.rotation.z = Math.sin(t * 0.1) * 0.04;
+  });
+
+  return (
+    <group ref={group}>
+      {curves.map((c, i) => (
+        <mesh key={i}>
+          <tubeGeometry args={[c, 48, 0.02, 6, false]} />
+          <meshBasicMaterial
+            ref={(el) => (tubeMats.current[i] = el)}
+            color={i % 2 ? '#7C96C4' : '#F0B34C'}
+            transparent
+            opacity={0}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+          />
+        </mesh>
+      ))}
+      <instancedMesh ref={inst} args={[undefined, undefined, packetCount]} frustumCulled={false}>
+        <sphereGeometry args={[1, 8, 8]} />
+        <meshBasicMaterial color="#F0B34C" transparent blending={THREE.AdditiveBlending} depthWrite={false} />
+      </instancedMesh>
+    </group>
+  );
+}
+
+/* ---------- phase-3: the obsidian monolith ---------- */
+function Monolith() {
+  const mesh = useRef();
+  useFrame((state) => {
+    const p = phaseState.current;
+    const presence = THREE.MathUtils.smoothstep(p, 2.25, 2.95);
+    const m = mesh.current;
+    if (!m) return;
+    m.visible = presence > 0.01;
+    if (!m.visible) return;
+    m.scale.setScalar(presence);
+    // subtle inertia toward the cursor
+    const px = state.pointer.x || 0;
+    const py = state.pointer.y || 0;
+    m.rotation.y += (px * 0.45 + 0.35 - m.rotation.y) * 0.03;
+    m.rotation.x += (-py * 0.25 - m.rotation.x) * 0.03;
+    m.position.y = Math.sin(state.clock.elapsedTime * 0.6) * 0.06;
+  });
+  return (
+    <mesh ref={mesh} visible={false}>
+      <boxGeometry args={[1.15, 2.7, 0.5]} />
+      <meshPhysicalMaterial
+        color="#0d1017"
+        metalness={0.95}
+        roughness={0.08}
+        clearcoat={1}
+        clearcoatRoughness={0.06}
+        envMapIntensity={1.2}
+      />
+    </mesh>
+  );
+}
+
+/* ---------- gutters: floating vector clusters framing the copy ---------- */
+function GutterCluster({ side, count = 34 }) {
+  const inst = useRef();
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const { viewport } = useThree();
+  const seeds = useMemo(
+    () =>
+      Array.from({ length: count }, () => ({
+        y: (Math.random() - 0.5) * 7,
+        z: -1.5 - Math.random() * 2.5,
+        xj: (Math.random() - 0.5) * 0.9,
+        s: 0.03 + Math.random() * 0.05,
+        r: Math.random() * Math.PI * 2,
+        sp: 0.2 + Math.random() * 0.5,
+      })),
+    [count]
+  );
+
+  useFrame((state) => {
+    const p = phaseState.current;
+    const presence = window4(p, 0.35, 0.8, 2.3, 2.85);
+    const m = inst.current;
+    if (!m) return;
+    m.visible = presence > 0.01;
+    m.material.opacity = 0.75 * presence;
+    if (!m.visible) return;
+    const t = state.clock.elapsedTime;
+    const x = side * (viewport.width / 2 - 0.9);
+    const parallax = phaseState.scrollNorm * 2.2; // gutters drift upstream as you descend
+    seeds.forEach((s, i) => {
+      dummy.position.set(
+        x + s.xj + Math.sin(t * s.sp + s.r) * 0.12,
+        ((s.y + parallax * (0.5 + (i % 3) * 0.35)) % 8) - 4,
+        s.z
+      );
+      dummy.rotation.set(t * s.sp, s.r + t * 0.3, 0);
+      dummy.scale.setScalar(s.s);
+      dummy.updateMatrix();
+      m.setMatrixAt(i, dummy.matrix);
+    });
+    m.instanceMatrix.needsUpdate = true;
+  });
+
+  return (
+    <instancedMesh ref={inst} args={[undefined, undefined, count]} frustumCulled={false}>
+      <tetrahedronGeometry args={[1, 0]} />
+      <meshStandardMaterial color="#7C96C4" emissive="#7C96C4" emissiveIntensity={0.25} transparent metalness={0.5} roughness={0.4} />
+    </instancedMesh>
+  );
+}
+
+/* ---------- camera rig + phase damping ---------- */
+function Rig() {
+  useFrame((state, delta) => {
+    // damp phase toward target; decay velocity
+    phaseState.current = THREE.MathUtils.damp(phaseState.current, phaseState.target, 3.2, delta);
+    phaseState.velocity = THREE.MathUtils.damp(phaseState.velocity, 0, 2.5, delta);
+    // gentle pointer parallax on the camera
+    const px = state.pointer.x || 0;
+    const py = state.pointer.y || 0;
+    state.camera.position.x += (px * 0.35 - state.camera.position.x) * 0.04;
+    state.camera.position.y += (py * 0.22 - state.camera.position.y) * 0.04;
+    state.camera.lookAt(0, 0, 0);
+  });
+  return null;
+}
+
+export default function GlobalScene() {
+  const tier = usePerfTier();
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    setReduced(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }, []);
+  if (!tier || reduced) return null;
+
+  return (
+    <div className="fixed inset-0 -z-10 pointer-events-none" aria-hidden="true">
+      <Canvas dpr={tier.dpr} camera={{ position: [0, 0, 6.5], fov: 46 }} gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}>
+        <fog attach="fog" args={['#0B0E15', 8, 15]} />
+        <ambientLight intensity={0.3} />
+        <spotLight position={[5, 7, 6]} intensity={2.4} color="#ffe3b0" angle={0.5} penumbra={0.8} />
+        <directionalLight position={[-6, -3, -4]} intensity={0.8} color="#7C96C4" />
+        <pointLight position={[0, 0, -6]} intensity={0.7} color="#3a4a6b" />
+        <Rig />
+        <CrystallineCore glass={tier.glass} />
+        <AgentConstellation count={tier.nodes} />
+        <NeuralPipelines packetCount={tier.packets} />
+        <Monolith />
+        {tier.gutters && (
+          <>
+            <GutterCluster side={-1} />
+            <GutterCluster side={1} />
+          </>
+        )}
+      </Canvas>
+    </div>
+  );
+}

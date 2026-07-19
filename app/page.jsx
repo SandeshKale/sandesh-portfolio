@@ -11,6 +11,7 @@ import Sandbox from '@/components/Sandbox';
 import Milestones from '@/components/Milestones';
 import Query from '@/components/Query';
 import Lab from '@/components/Lab';
+import Signals from '@/components/Signals';
 import { Contact, Footer } from '@/components/Sections';
 import { ThemeProvider } from '@/lib/theme';
 import { logEvent } from '@/lib/telemetry';
@@ -47,6 +48,7 @@ export default function Page() {
       <Sandbox />
       <Milestones />
       <Lab />
+      <Signals />
       <Query />
       <Contact />
       <Footer />

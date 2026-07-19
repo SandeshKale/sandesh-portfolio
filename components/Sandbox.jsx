@@ -23,15 +23,27 @@ function edge(a, b, dy = 0) {
 }
 
 const NODE_DESC = {
-  query: 'The user’s question enters the system.',
-  router: 'Deterministic triage: check the semantic cache first; on a miss, plan retrieval. Rules, not vibes.',
-  cache: 'Meaning-level cache. A hit skips retrieval and agents entirely — straight to the guardrail. The thicker this edge, the more traffic it absorbs.',
-  hop: 'A graph-retrieval hop: each hop follows relationships in the knowledge graph one level deeper. More hops, more context, more latency.',
-  planner: 'A frontier model that decomposes the task and delegates. Thinks slow, once.',
-  exec: 'Fast, cheap execution models doing the delegated work in parallel.',
-  mono: 'One model, one giant context. Simpler wiring, heavier tokens, slower answers.',
-  guard: 'The intercept layer: schema validation, policy checks, PII filters. Nothing reaches the user without passing it.',
-  resp: 'The validated answer. Auditable end to end.',
+  query: 'Your question enters the system — like walking up to a help desk.',
+  router: 'The traffic controller. It decides, by fixed rules (not AI guesswork): have we answered something like this before? If yes → cache. If no → go do the research.',
+  cache: 'The system\u2019s memory of past answers — matched by MEANING, not exact words. A hit is instant and nearly free, and skips everything else. The thicker this line, the more questions it absorbs.',
+  hop: 'One step of research in the knowledge graph. Like following a citation to its source — each extra hop digs one level deeper: more context, more seconds.',
+  planner: 'The senior expert. A powerful (slower, pricier) AI that reads the task once, breaks it into pieces, and delegates.',
+  exec: 'The fast juniors. Cheap, quick AI models doing the delegated pieces in parallel.',
+  mono: 'One AI doing everything alone with one huge briefing document. Simpler to build — but slower and more expensive per answer.',
+  guard: 'Security at the exit. Every answer is checked here — format, policy, sensitive data — before anyone sees it. Nothing ships unchecked.',
+  resp: 'The final, verified answer — with a paper trail for every step it took.',
+};
+
+/* the guided tour: node order + what to say at each stop */
+const TOUR = ['query', 'router', 'cache', 'hop0', 'agents', 'guard', 'resp'];
+const TOUR_CAPTIONS = {
+  query: 'A question arrives.',
+  router: 'First stop: the router decides the cheapest safe path — by rules, not AI mood.',
+  cache: 'Best case: we\u2019ve answered something with this MEANING before. Instant, nearly free.',
+  hop0: 'Cache miss? The system researches — each hop follows the knowledge graph one level deeper.',
+  agents: 'The research reaches the AI layer: either one big model, or a planner delegating to fast juniors.',
+  guard: 'Before anything ships, the guardrail checks format, policy, and sensitive data.',
+  resp: 'A verified answer, with an audit trail. That\u2019s the whole machine.',
 };
 
 function buildLayout({ mode, depth }) {
@@ -78,8 +90,15 @@ function RagSandbox() {
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [chaos, setChaos] = useState(false);
+  const [tour, setTour] = useState(-1); // -1 off, else index into TOUR
 
   const est = useMemo(() => estimate({ mode, bias, depth }), [mode, bias, depth]);
+  const tourStop = tour >= 0 ? TOUR[tour] : null;
+  const tourNodeId =
+    tourStop === 'agents' ? (mode === 'multi' ? 'planner' : 'mono') : tourStop;
+  function advanceTour() {
+    setTour((t) => (t + 1 >= TOUR.length ? -1 : t + 1));
+  }
   const { nodes, hops, agents } = useMemo(() => buildLayout({ mode, depth }), [mode, depth]);
   const cachePct = Math.round((0.2 + bias * 0.6) * 100);
   const graphKey = `${mode}-${depth}-${Math.round(bias * 4)}-${chaos ? 'x' : 'o'}`;
@@ -139,7 +158,7 @@ function RagSandbox() {
   });
 
   function NodeBox({ id, n }) {
-    const k = focus === id;
+    const k = focus === id || tourNodeId === id;
     const st = kindStyle(n.kind, k);
     const descKey = n.kind === 'hop' ? 'hop' : n.kind || id;
     return (
@@ -171,9 +190,25 @@ function RagSandbox() {
         dynamic graph rag sandbox
       </div>
 
+      {/* plain-language intro */}
+      <div className="px-5 py-3 border-b hairline text-[13px] text-mute leading-[1.7]">
+        <span className="text-mist font-medium">What is this?</span> A live model of how a
+        serious AI system answers a question. It doesn&apos;t just &quot;ask ChatGPT&quot; — a question is
+        triaged, maybe answered from memory, maybe researched, reasoned over, and
+        security-checked before anyone sees it. The three levers on the left are the real
+        decisions an architect makes. Move them and watch the machine re-route.
+        <button
+          data-hot
+          onClick={() => { setTour(0); logEvent('sandbox.tour', 'started'); }}
+          className="ml-2 font-mono text-[11px] text-amber border border-amber/50 rounded-full px-3 py-0.5 hover:bg-amber/10 transition-colors"
+        >
+          ▸ 30-second guided tour
+        </button>
+      </div>
+
       {/* numbered flow legend */}
       <div className="px-5 py-2.5 border-b hairline flex flex-wrap gap-x-5 gap-y-1 font-mono text-[10px] tracking-[0.04em] text-dim">
-        {['1 query', '2 router triages', '3 cache or retrieval', '4 agents reason', '5 guardrail intercepts', '6 response'].map((s) => (
+        {['1 question in', '2 router triages', '3 memory or research', '4 AI reasons', '5 security check', '6 answer out'].map((s) => (
           <span key={s}>{s}</span>
         ))}
       </div>
@@ -192,6 +227,7 @@ function RagSandbox() {
                 </button>
               ))}
             </div>
+            <p className="mt-1.5 text-[10.5px] text-dim leading-[1.5]">one big AI vs. a planner delegating to fast helpers</p>
           </div>
           <div>
             <div className="font-mono text-[10px] tracking-[0.1em] text-dim uppercase mb-2 flex justify-between">
@@ -201,6 +237,7 @@ function RagSandbox() {
               onChange={(e) => { setBias(+e.target.value); setNote(''); }}
               className="w-full accent-[rgb(var(--c-amber))]"
               aria-label="Latency versus accuracy bias" />
+            <p className="mt-1.5 text-[10.5px] text-dim leading-[1.5]">right = faster &amp; cheaper (lean on memory) · left = deeper &amp; slower (always research)</p>
           </div>
           <div>
             <div className="font-mono text-[10px] tracking-[0.1em] text-dim uppercase mb-2">Graph search depth</div>
@@ -213,6 +250,7 @@ function RagSandbox() {
                 </button>
               ))}
             </div>
+            <p className="mt-1.5 text-[10.5px] text-dim leading-[1.5]">how many levels deep the research digs before answering</p>
           </div>
           <div className="pt-3 border-t border-dashed hairline font-mono text-[11px] space-y-1.5">
             <div className="flex justify-between text-mute"><span>p50 latency</span><span className={chaos ? 'text-[#d97a5a]' : 'text-amber'}>{chaos ? est.latency + 180 : est.latency} ms</span></div>
@@ -315,15 +353,31 @@ function RagSandbox() {
             </motion.g>
           </svg>
 
-          {/* explainer bar: hover a node, understand it */}
-          <div className="mt-2 min-h-[38px] rounded-lg border border-dashed hairline px-3.5 py-2 font-mono text-[11.5px] leading-[1.6] text-mute">
-            {focus
-              ? NODE_DESC[
-                  focus.startsWith('hop') ? 'hop'
-                  : focus.startsWith('exec') ? 'exec'
-                  : focus
-                ] || NODE_DESC[(nodes[focus] || {}).kind] || ''
-              : <span className={chaos ? 'text-[#d97a5a]' : 'text-dim'}>{chaos ? chaosSummary : <>hover any node to see what it does · {summary}</>}</span>}
+          {/* explainer bar: tour > hover > summary */}
+          <div className="mt-2 min-h-[46px] rounded-lg border border-dashed hairline px-3.5 py-2 font-mono text-[11.5px] leading-[1.6] text-mute">
+            {tour >= 0 ? (
+              <div className="flex items-start justify-between gap-3">
+                <span>
+                  <span className="text-amber">tour {tour + 1}/{TOUR.length}</span>{' '}
+                  {TOUR_CAPTIONS[TOUR[tour]]}
+                </span>
+                <span className="flex gap-2 shrink-0">
+                  <button data-hot onClick={advanceTour}
+                    className="text-amber border border-amber/50 rounded px-2.5 py-0.5 hover:bg-amber/10 transition-colors">
+                    {tour + 1 >= TOUR.length ? 'done' : 'next →'}
+                  </button>
+                  <button data-hot onClick={() => setTour(-1)} className="text-dim hover:text-mist transition-colors">✕</button>
+                </span>
+              </div>
+            ) : focus ? (
+              NODE_DESC[
+                focus.startsWith('hop') ? 'hop'
+                : focus.startsWith('exec') ? 'exec'
+                : focus
+              ] || NODE_DESC[(nodes[focus] || {}).kind] || ''
+            ) : (
+              <span className={chaos ? 'text-[#d97a5a]' : 'text-dim'}>{chaos ? chaosSummary : <>hover any node to see what it does · {summary}</>}</span>
+            )}
           </div>
 
           <div className="mt-3 flex items-start gap-3 flex-wrap">

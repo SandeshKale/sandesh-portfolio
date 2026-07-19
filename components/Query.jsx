@@ -142,53 +142,61 @@ function Terminal() {
 }
 
 /* ---------------- architecture consult ---------------- */
-/* The blueprint renders as an isometric structure assembling in 3D:
-   foundation blocks = component stack · pillar = the pattern · roof = guardrails.
-   A raw-mode switch flattens it back into the validated JSON — the contract itself. */
-function IsoBlueprint({ bp }) {
+/* The blueprint is GENERATED from the validated JSON: the dataFlow array
+   becomes a vertical pipeline SVG wrapped in a dashed guardrail boundary,
+   with an animated packet traversing the whole flow. Pure SVG — no CSS 3D
+   transform conflicts, renders identically everywhere. */
+function FlowBlueprint({ bp }) {
+  const steps = Array.isArray(bp.dataFlow) && bp.dataFlow.length ? bp.dataFlow.slice(0, 7) : null;
+  if (!steps) return null;
+  const W = 320;
+  const BOX_H = 34;
+  const GAP = 22;
+  const TOP = 34;
+  const H = TOP + steps.length * (BOX_H + GAP) + 6;
+  const cx = W / 2;
+  const pathD =
+    `M${cx},${TOP - 12} ` +
+    steps.map((_, i) => `L${cx},${TOP + i * (BOX_H + GAP) + BOX_H + GAP / 2}`).join(' ');
+
   return (
-    <div className="flex justify-center py-4" style={{ perspective: 900 }} aria-hidden="true">
-      <div
-        className="relative w-[280px] h-[190px]"
-        style={{ transform: 'rotateX(52deg) rotateZ(-38deg)', transformStyle: 'preserve-3d' }}
-      >
-        {/* foundation: the component stack */}
-        <div className="absolute inset-x-0 bottom-0 grid grid-cols-2 gap-1.5" style={{ transform: 'translateZ(0px)' }}>
-          {(bp.stack || []).slice(0, 6).map((c, i) => (
-            <motion.div
-              key={c}
-              initial={{ opacity: 0, y: 26 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 + i * 0.09, duration: 0.5, ease: [0.2, 0.7, 0.2, 1] }}
-              title={c}
-              className="border border-steel/50 bg-steel/10 rounded px-1.5 py-1 font-mono text-[8px] text-steel truncate shadow-[0_10px_18px_-8px_rgb(var(--c-ink))]"
-            >
-              {c}
-            </motion.div>
-          ))}
-        </div>
-        {/* pillar: the pattern */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.75, duration: 0.5 }}
-          title={bp.pattern}
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 border border-amber/70 bg-amber/10 rounded px-2.5 py-2 font-mono text-[9px] text-amber text-center max-w-[170px] shadow-[0_0_22px_rgb(var(--c-amber)/.25)]"
-          style={{ transform: 'translate(-50%,-50%) translateZ(34px)' }}
-        >
-          {bp.pattern}
-        </motion.div>
-        {/* roof: guardrails */}
-        <motion.div
-          initial={{ opacity: 0, y: 34 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.05, duration: 0.5 }}
-          className="absolute inset-x-4 top-0 border border-ok/60 bg-ok/10 rounded px-2 py-1.5 font-mono text-[8px] text-ok"
-          style={{ transform: 'translateZ(68px)' }}
-        >
-          <span className="opacity-70">guardrails ·</span> {(bp.guardrails || []).length} active
-        </motion.div>
-      </div>
+    <div className="flex justify-center">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-[340px] h-auto" role="img"
+        aria-label={`Generated data-flow blueprint: ${steps.join(', ')}`}>
+        {/* guardrail boundary */}
+        <rect x="10" y={TOP - 20} width={W - 20} height={H - TOP + 8} rx="12" fill="none"
+          stroke="rgb(var(--c-ok) / .5)" strokeWidth="1" strokeDasharray="5 5" />
+        <text x={W - 20} y={TOP - 28 + 20} textAnchor="end" fill="rgb(var(--c-ok))"
+          style={{ fontFamily: '"JetBrains Mono",monospace', fontSize: 8 }}>
+          guardrail boundary · {(bp.guardrails || []).length} controls
+        </text>
+        {/* spine + animated packet */}
+        <path id="bp-spine" d={pathD} fill="none" stroke="rgb(var(--c-steel) / .4)" strokeWidth="1.2" />
+        <circle r="3.2" fill="rgb(var(--c-amber))" opacity="0.9">
+          <animateMotion dur={`${steps.length * 0.9}s`} repeatCount="indefinite">
+            <mpath href="#bp-spine" />
+          </animateMotion>
+        </circle>
+        {/* stage boxes */}
+        {steps.map((label, i) => {
+          const y = TOP + i * (BOX_H + GAP);
+          return (
+            <g key={i}>
+              <motion.rect
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 + i * 0.12 }}
+                x="34" y={y} width={W - 68} height={BOX_H} rx="8"
+                fill="rgb(var(--c-panel2))" stroke="rgb(var(--c-amber) / .55)" strokeWidth="1"
+              />
+              <motion.text
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.18 + i * 0.12 }}
+                x="46" y={y + BOX_H / 2 + 3.5} fill="rgb(var(--c-mute))"
+                style={{ fontFamily: '"JetBrains Mono",monospace', fontSize: 10 }}>
+                {String(i + 1).padStart(2, '0')} · {label}
+              </motion.text>
+            </g>
+          );
+        })}
+      </svg>
     </div>
   );
 }
@@ -301,7 +309,7 @@ function Consult() {
               className="mt-5 pt-4 border-t border-dashed hairline space-y-4"
             >
               <div className="flex items-center justify-between gap-3">
-                <div className="font-mono text-[9.5px] tracking-[0.12em] text-dim uppercase">blueprint · assembled from validated json</div>
+                <div className="font-mono text-[9.5px] tracking-[0.12em] text-dim uppercase">blueprint · generated from validated json</div>
                 <div className="flex rounded-lg border hairline-strong overflow-hidden font-mono text-[10px]">
                   {['structure', 'json'].map((v) => (
                     <button key={v} data-hot onClick={() => setView(v)}
@@ -311,51 +319,89 @@ function Consult() {
                   ))}
                 </div>
               </div>
+
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div>
+                  <div className="font-mono text-[9.5px] tracking-[0.12em] text-dim uppercase">Pattern</div>
+                  <div className="font-disp font-medium text-[20px] text-amber mt-0.5">{bp.pattern}</div>
+                </div>
+                {bp.complexity && (
+                  <span className="font-mono text-[10px] border hairline-strong rounded-full px-3 py-1 text-mute mt-1">
+                    complexity · {bp.complexity}
+                  </span>
+                )}
+              </div>
+
+              {bp.rationale && <p className="text-[13.5px] text-mute leading-[1.7]">{bp.rationale}</p>}
+
               {view === 'structure' ? (
-                <IsoBlueprint bp={bp} />
+                <FlowBlueprint bp={bp} />
               ) : (
                 <pre className="font-mono text-[10.5px] leading-[1.7] text-mute bg-panel2/60 rounded-lg p-3 overflow-x-auto">
 {JSON.stringify(bp, null, 2)}
                 </pre>
               )}
-              <div className="flex items-start justify-between gap-4 flex-wrap">
+
+              {Array.isArray(bp.stack) && bp.stack.length > 0 && (
                 <div>
-                  <div className="font-mono text-[9.5px] tracking-[0.12em] text-dim uppercase">Pattern</div>
-                  <div className="font-disp font-medium text-[19px] text-amber mt-0.5">{bp.pattern}</div>
-                </div>
-                {bp.complexity && (
-                  <span className="font-mono text-[10px] border hairline-strong rounded-full px-3 py-1 text-mute">
-                    complexity · {bp.complexity}
-                  </span>
-                )}
-              </div>
-              {Array.isArray(bp.stack) && (
-                <div>
-                  <div className="font-mono text-[9.5px] tracking-[0.12em] text-dim uppercase mb-1.5">Component stack</div>
-                  <div className="flex flex-wrap gap-2">
-                    {bp.stack.map((c) => (
-                      <span key={c} className="tag">{c}</span>
-                    ))}
+                  <div className="font-mono text-[9.5px] tracking-[0.12em] text-dim uppercase mb-2">Component stack</div>
+                  <div className="grid sm:grid-cols-2 gap-x-5 gap-y-1.5">
+                    {bp.stack.map((c, i) => {
+                      const name = typeof c === 'string' ? c : c.name;
+                      const role = typeof c === 'string' ? '' : c.role;
+                      return (
+                        <div key={i} className="text-[12.5px] leading-[1.6]">
+                          <span className="text-mist font-medium">{name}</span>
+                          {role && <span className="text-dim"> — {role}</span>}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
-              {Array.isArray(bp.guardrails) && (
+
+              {Array.isArray(bp.guardrails) && bp.guardrails.length > 0 && (
                 <div>
                   <div className="font-mono text-[9.5px] tracking-[0.12em] text-dim uppercase mb-1.5">Guardrails</div>
                   <ul className="text-[13px] text-mute space-y-1">
                     {bp.guardrails.map((g) => (
-                      <li key={g} className="flex gap-2">
-                        <span className="text-amber">›</span>
-                        {g}
-                      </li>
+                      <li key={g} className="flex gap-2"><span className="text-ok">›</span>{g}</li>
                     ))}
                   </ul>
                 </div>
               )}
-              {bp.firstStep && (
+
+              {Array.isArray(bp.risks) && bp.risks.length > 0 && (
                 <div>
+                  <div className="font-mono text-[9.5px] tracking-[0.12em] text-dim uppercase mb-1.5">Risks · mitigations</div>
+                  <div className="space-y-1.5">
+                    {bp.risks.map((r, i) => (
+                      <div key={i} className="text-[12.5px] leading-[1.6]">
+                        <span className="text-[#c98a8a]">{r.risk}</span>
+                        <span className="text-dim"> → {r.mitigation}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {Array.isArray(bp.rollout) && bp.rollout.length > 0 && (
+                <div>
+                  <div className="font-mono text-[9.5px] tracking-[0.12em] text-dim uppercase mb-1.5">Rollout</div>
+                  <ol className="text-[13px] text-mute space-y-1">
+                    {bp.rollout.map((ph, i) => (
+                      <li key={i} className="flex gap-2.5">
+                        <span className="font-mono text-[10px] text-amber pt-0.5">P{i + 1}</span>{ph}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+
+              {bp.firstStep && (
+                <div className="border-t border-dashed hairline pt-3">
                   <div className="font-mono text-[9.5px] tracking-[0.12em] text-dim uppercase mb-1">Where I&apos;d start</div>
-                  <p className="text-[13.5px] text-mute">{bp.firstStep}</p>
+                  <p className="text-[13.5px] text-mist">{bp.firstStep}</p>
                 </div>
               )}
             </motion.div>
